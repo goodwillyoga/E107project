@@ -2,7 +2,7 @@
 library("rjson")
 
 msgs.df <- c()
-trending_stock <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","POM","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR")
+trending_stock <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","POM","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR","XOM","PSX","VLO","PGR","CINF","FAF","JBLU","DAL","HA","ACN","INFY","CTSH")
 
 
 for(k in c(1:50))
@@ -27,7 +27,7 @@ for(k in c(1:50))
 
   stock_twits(msgs.df, trending_stock)
   print(paste("ite", k))
-  write.csv(msgs.df, file = "/Users/poojasingh/Documents//HE107/stock-twits-multiple.csv", row.names=FALSE, col.names=FALSE, append=TRUE)
+  write.csv(msgs.df, file = "/Users/poojasingh/Documents/HE107/stock-twits-multiple-9.csv", row.names=FALSE, col.names=FALSE, append=TRUE)
   Sys.sleep(15*60) #sleep for 15 minutes
 }
 
