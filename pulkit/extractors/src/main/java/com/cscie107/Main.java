@@ -25,7 +25,11 @@ public class Main {
             Executors.newScheduledThreadPool(1);
 
     public static void main(String[] args) throws InterruptedException, IOException {
-       String stocksFileName = "stocks.csv";
+        if(args.length != 4){
+            System.out.println("====USAGE====");
+            System.out.println("java -jar -Duser.timezone=America/New_York extractors-1.0-jar-with-dependencies.jar consumerKey consumerSecret token secret");
+        }
+        String stocksFileName = "stocks.csv";
         String tweetsFileName = "twitter.json";
         String[] monitoredStocks = MonitoredStocks.getStocks();
         StockPriceExtractor spe = new StockPriceExtractor();
@@ -47,7 +51,7 @@ public class Main {
                             System.out.println(msg);
                             bufferWritter.write(StringEscapeUtils.unescapeJava(msg));
                             if (count == 200) {
-                                count=0;
+                                count = 0;
                                 bufferWritter.flush();
                             } else {
                                 count++;
@@ -67,9 +71,9 @@ public class Main {
             @Override
             public void run() {
                 Map<String, Stock> stocks = spe.extractPrices(MonitoredStocks.getStocks());
-                writeLiveStockData(stocks,stocksFileName);
+                writeLiveStockData(stocks, stocksFileName);
             }
-        },0,15, TimeUnit.MINUTES);
+        }, 0, 15, TimeUnit.MINUTES);
 
     }
 
