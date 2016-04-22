@@ -5,7 +5,7 @@ library(dplyr)
 # File Location where the dump is to be saved, If a file already exists we load the existing data and merge the new data to it and write back to this location
 existingDataLocation <- "/code/CSCIE-107/E107project/pulkit/twitter.RData"
 # File location for the zipped files, when the files are processed they are moved from this directory to a new location using  getDestinationFileName function
-files <- list.files("/code/tot/Info/twitter-data/unprocessesed/",pattern = "^twitter.json",full.names = TRUE)
+files <- list.files("/code/tot/Info/twitter-data/unprocessesed/",pattern = "^twitter.json_",full.names = TRUE)
 
 getDestinationFileName <- function(fileName, replaceWord="unprocessesed", withWord="processesed"){
   gsub(replaceWord, withWord, fileName)
