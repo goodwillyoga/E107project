@@ -1,6 +1,7 @@
 package com.cscie107;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.json.JSONObject;
 
 import java.io.*;
 
@@ -9,7 +10,28 @@ import java.io.*;
  */
 public class Cleaner {
     public static void main(String[] args) throws IOException {
+        int totalLines;
 
+        File f11 = new File("/code/tot/Info/twitter-data/unprocessesed/newlineissue.json");
+        File f22 = new File("/code/tot/Info/twitter-data/unprocessesed/newlineissue-mod.json");
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f22, true)))) {
+            try (BufferedReader br = new BufferedReader(new FileReader(f11))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = getCleanedString(line);
+                    try {
+                        JSONObject jObject = new JSONObject(line); // json
+                        //JSONObject data = jObject.getJSONObject("created_at"); // get data object
+
+                    }catch(Exception ex){
+                        System.out.println(line);
+                        out.println(line);
+                        //System.exit(1);
+                    }
+                }
+            }
+        }
+        System.exit(1);
         File unprocessed = new File("/code/tot/Info/twitter-data/unprocessesed/");
         File processed = new File("/code/tot/Info/twitter-data/processesed");
 
@@ -35,5 +57,18 @@ public class Cleaner {
                 }
             }
         }
+    }
+
+    private static String getCleanedString(String line) {
+        int startIndex = line.indexOf("source");
+        int endIndex = line.indexOf("truncated");
+        while(startIndex != -1 && endIndex !=-1 ){
+            String newLine = line.substring(0,startIndex);
+            String endLine = line.substring(endIndex,line.length());
+            line = newLine+endLine;
+            startIndex = line.indexOf("source");
+            endIndex = line.indexOf("truncated",startIndex);
+        }
+        return line;
     }
 }
