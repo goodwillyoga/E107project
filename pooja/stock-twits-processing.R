@@ -36,7 +36,7 @@ aggregate_data  <-  suppressWarnings(lapply(1:48, function(i) {
       paste("iteration ", i, " length(e$dat$id)=", length(e$dat$id))
       
     }, error = function(e1) {
-      cat("error in path ", e$path)
+      cat("error in path ", e$path, fill=TRUE)
       NULL
     })
 }))
