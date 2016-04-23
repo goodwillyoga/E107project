@@ -49,7 +49,7 @@ public class Main {
                         try {
                             msg = messages.take();
                             System.out.println(msg);
-                            bufferWritter.write(StringEscapeUtils.unescapeJava(msg));
+                            bufferWritter.write(msg);
                             if (count == 200) {
                                 count = 0;
                                 bufferWritter.flush();
