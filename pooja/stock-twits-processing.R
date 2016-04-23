@@ -1,7 +1,7 @@
 library(dplyr)
 library(readr)
 library(stringr)
-
+library(ggplot2)
 
 #Passing variable by reference 
 e <- new.env(parent=globalenv()) 
@@ -86,3 +86,11 @@ paste("i ", i, "score " , score)
 
 head(e$dat3)
 
+hist(e$dat3$sentiment_score)
+
+e$dat3 %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB")) %>%
+  ggplot(aes(x = sentiment_score, fill=symbol, color=symbol)) +
+  geom_bar() 
+
+e$dat3 %>%
+  ggplot(aes(symbol,sentiment_score, fill=symbol, color=symbol)) + geom_point()
