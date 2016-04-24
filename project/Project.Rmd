@@ -1,37 +1,82 @@
 ---
-title: "Project"
-author: "Mohan"
+title: "Statistical Analysis of Stock Volatility"
 date: "April 23, 2016"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+#Background and Motivation
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The primary motivation of the project is to highlight the "risk" associated with Stocks by applying various statistical methods to measure risk factors such as “Market Sentiment” ("Beta", "Standard Deviation") and “Social Sentiment” (“Twitter feeds”). The fundamental reason to choose a topic in finance is partly current experience working in the industry and partly to understand the significance of "risk" being an end investor. Many of us manage different types of brokerage accounts (stock trading, 401k and IRA accounts) without clearly understanding the differing risk associated with the performance of these accounts. The risk appetite itself differs widely with different classes of investors depending on their personal situation and other factors. Hence it is prudent for such investors to understand the risk factors associated with their individual stocks or funds. Further, the recent advances in the social media has provided a wealth of information in the form of Twitter feeds or Google trends that can further provide great insight on the sentiment of investors influenced by market and other events. This research is an attempt to highlight concepts around "risk" factors by performing a thorough statistical analysis backed by appropriate models. 
 
-```{r, messages=FALSE, warning=FALSE}
+#Project Objectives 
+
+Volatility is a statistical measure of the dispersion of returns for a given security or market-index. Commonly, the higher the volatility, the riskier the security. The volatility itself is affected by multiple factors such as “Beta”, “Standard Deviation”, “Earnings”, “Balance Sheet”, “Analyst Recommendations” and “Social Sentiment”.  We will start with the concept of Beta as a measure of volatility of a stock relative to the benchmark (like S&P 500) and analyze how it affects the returns of a stock relative to the benchmark. In particular, we will run a simple case study by choosing three stocks with widely differing returns relative to the benchmark (S&P 500) to emphasize the effect of beta on such classes of stocks. We will then generalize this a bit more, by comparing Beta (risk) for a universe of stocks against their respective returns for a chosen period and more important, we want to understand if a portfolio of low-volatility stocks earn returns different from a portfolio of high-volatility stocks. This is one of the fundamental questions that this research ponders upon by providing a statistical insight into the results. We will then repeat the analysis using Standard Deviation as the volatility measurement. The way we present this part of the material is by running a multiple regression model on stock’s return using beta and standard deviation as predictors. 
+While the main focus of this research paper is on stock’s beta and standard deviation, we will also introduce other significant measures of volatility such as Twitter/Stocktwits feeds that is gaining momentum since the advent of Social Media Revolution. This is primarily done to make the investigation complete. .
+
+##Concepts and Methods:
+**Beta**: A quantitative measure of the volatility of a stock relative to the benchmark index, S&P 500, which is generally considered representative of the overall US securities market. Specifically, Beta is the performance the stock has experienced in the last 60 months as the S&P 500 moved 1% up or down. 
+
+A Beta of 1 indicates the stock's price will move with the S&P 500. A Beta of less than 1 means it will be less volatile than the S&P 500. Generally, the higher the Beta, the riskier the investment. For e.g. - utilities and food stocks which are considered relatively safe have a beta of less than 1. On the other hand, technology and auto stocks which are considered riskier have a beta more than 1. A beta of 1.10 shows that the stock has performed 10% better than its benchmark in up markets and 10% worse in down markets, assuming all other factors remain constant. Conversely, a beta of 0.85 indicates that the stock’s return is expected to perform 15% worse than the benchmark's return during up markets and 15% better during down markets.
+
+A stock's Beta is the covariance between the return on the stock (%) and the return on the index (%), compared to the variance of the index. In other words, this is the slope of the least squares regression line fit between S&P 500 returns (predictor) and stock’s returns.
+$$
+β = Cov(Stock return, Index return) / Var(Index return)	= σxy / σ^2x
+where x = S&P 500 return, y = stock return 
+$$
+
+**R-Squared**: The R-squared of a stock tells investors if the beta of the stock is measured against an appropriate benchmark. Measuring the correlation of a stock’s movements to that of an index like S&P 500, R-squared describes the level of association between the stock’s volatility and market risk. It is derived by squaring the value of correlation coefficient (rxy) between stock return and index return. Its value is between -1 and +1.
+
+$$
+rxy = Cov(Stock return, Index return) / (sd(Stock return) * sd(Index return))
+$$
+
+Using the population of stock returns for the past 10 years, we can represent above using the Greek notation as follow – ρxy = σxy / (σx * σy) where ρxy = correlation coefficient between x and y.
+
+**Standard Deviation**: The standard deviation is another statistical measure of a stock’s volatility. It indicates the tendency of the returns to rise or fall drastically in a short period of time. A security that is volatile is also considered higher risk because its performance may change quickly in either direction at any moment. Such volatile stocks typically have a high standard deviation.
+
+
+##Assumptions:
+1.	The historical weekly close prices reflect changes in the real values of stocks for the chosen period.
+
+2.	Note that Beta can change depending on the duration of the time period, but its relation w.r.t the index returns remains the same. So specific duration of beta is not relevant as such for our analysis, but for Beta calculation, we focus on calculating the 10-year Beta (2005-2015) annualized basis.
+
+3.	Total returns (5-year Annualized) of a stock is used to evaluate the relationship b/n beta and stock returns.
+
+4.	We have chosen the exchange traded fund (SPX) as a proxy for S&P 500 index performance when comparing returns of individual stocks against benchmark. 
+
+5.	We will use the adjacent table to interpret the strength of the correlation coefficient values.
+
+
+# Beta Analysis
+
+```{r, messages=FALSE, warning=FALSE, echo=FALSE}
 ## put your code here
 library(dplyr)
+library(knitr)
+opts_chunk$set(cache = TRUE, message = FALSE)
 library(readr)
 library(ggplot2)
 theme_set(theme_bw(base_size = 16))
 library(gganimate)
-library(knitr)
 library(broom)
 ```
 
-Load beta of a universe of stocks
+**Load beta of a universe of stocks**
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 url <- "https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/2500%20Stocks%20Financial%20Data.csv"
 financial_data <- read_csv(url)
 
 # data wrangling - rename columns etc
 names(financial_data)[names(financial_data) == 'Beta (5 Yr Annualized)'] <- 'Beta_5Year'
+names(financial_data)[names(financial_data) == 'Beta (1 Year Annualized)'] <- 'Beta_1Year'
+names(financial_data)[names(financial_data) == 'Standard Deviation (5 Yr Annualized)'] <- 'SD_5Year'
+names(financial_data)[names(financial_data) == 'P/E (Next Year\'s Estimate)'] <- 'PE_NextYear'
 names(financial_data)[names(financial_data) == 'Total Return (5 Yr Annualized)'] <- 'Annualized_Return_5Year'
 names(financial_data)[names(financial_data) == 'Sector/Industry'] <- 'Sector'
+names(financial_data)[names(financial_data) == 'Security Type'] <- 'SecurityType'
 
-head(financial_data, 2)
+select(financial_data, Symbol, SecurityType, Sector, Beta_5Year, Beta_1Year, SD_5Year, PE_NextYear, Annualized_Return_5Year) %>% head() %>% kable
 
 ggplot(financial_data, aes(x=Beta_5Year)) + 
   geom_histogram(aes(y=..density..), bins=20, colour="black", fill="white") + 
@@ -69,15 +114,25 @@ all_beta<-all_beta[,c("Sector", "Beta_Median", "Beta_Mean", "Beta_SD", "Returns_
 sectors_beta<-rbind(sectors_beta, all_beta)
 sectors_beta %>% kable
 
-# It is clear that beta for utilities is very low as expected. Utilities tend to fluctuate less with the market as they are basic necessaties. On the other hand, industrials and materials are cyclical type and their beta tends to be very high. Financials have almost perfect correlation with S&P500 with beta almost 1.
+# bar plot showing mean beta and stock-returns across sectors
+ggplot(sectors_beta, aes(x=factor(Sector), y=Beta_Mean)) + 
+  geom_bar(stat="identity", width=0.5, colour="black", fill="#FF6666", alpha=0.7) + 
+  geom_bar(data=sectors_beta, aes(x=factor(Sector), y=Returns_Mean), stat="identity", width=0.5, colour="black", fill="red", alpha=0.2) + 
+  xlab("Sector") +
+  ylab("%") +
+  scale_y_log10() +
+  scale_x_discrete(labels = abbreviate) +
+  ggtitle("Mean beta and returns across sectors")
+
+# It is clear that beta for different industry sectors are different with utilities and consumer staples having very low beta values as expected. Utilities and consumer staples tend to fluctuate less with the overall market sentiment as they are basic necessities. On the other hand, industrials and materials are cyclical in nature and their beta tends to be very high. Financials have almost perfect correlation with S&P500 with beta almost 1.
 
 # Also it is clear that returns are different for different beta. We will later see if there is a clear relation between returns and beta for a universe of 2500 stocks.
   
 ```
 
-Data wranging with historical prices - SPY and 3 chosen stocks
+###Data wranging with historical prices - SPY and 3 chosen stocks
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 SPY_url<-"https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/SPY%20weekly%2010%20years.csv"
 SPY_history<-read_csv(SPY_url)
 
@@ -130,7 +185,7 @@ Weekly_Returns %>% kable
 
 Betacomputation: case Study of 3 stocks
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 # Correlation
 ED_cor<-cor(stocks$ED.Returns, stocks$SPY.Returns)
 ADSK_cor<-cor(stocks$ADSK.Returns, stocks$SPY.Returns)
@@ -152,7 +207,16 @@ IBM_beta$term[1]<-"Beta (IBM)"
 beta_est<-union(IBM_beta, union(ED_beta, ADSK_beta))
 beta_est<-mutate(beta_est, r=c(ED_cor, ADSK_cor, IBM_cor))
 beta_est<-mutate(beta_est, r.squared_perc=round(r*r*100, 3))
+beta_est<-rbind(beta_est, c('Beta (SPY)', '1.0', '0', '0', '0', '1', '1', '0', '0'))
+beta_est<-mutate(beta_est, estimate=round(as.numeric(estimate), 2))
 beta_est %>% kable
+
+# bar plot showing estimated beta and calculated returns
+ggplot(beta_est, aes(x=factor(term), y=estimate)) + 
+  geom_bar(stat="identity", width=0.5, colour="black", fill="#FF6666", alpha=0.3) + 
+  xlab("Case Study") +
+  ylab("Beta Estimate") +
+  ggtitle("Case Study: Estimated Beta")
 
 # plot using smoothing
 ggplot_lm<-function(stock_col) {
@@ -186,10 +250,49 @@ financial_data %>%
   geom_point() +
   geom_smooth(method="lm", se = TRUE) +
   ggtitle("Beta vs Annualized_Returns (5 Year)")
+
+# From the regression, it appears that annualized returns goes by about 5.47% for every one unit increase in beta.
   
 ```
 
-MonteCarlo simulation 
-```{r, warning=FALSE}
-set.seed(1234)
+**MonteCarlo simulation**
+
+```{r, warning=FALSE, echo=FALSE}
+beta_sorted<-financial_data %>% arrange(Beta_5Year) %>% select(Symbol, Beta_5Year, Annualized_Return_5Year)
+
+# Monte Carlo simulation parameters
+set.seed(131)
+num_bins<-5                     # distinct bins after sorting betas
+num_stocks<-nrow(beta_sorted)   # total number of stocks in our universe
+bin_size<-num_stocks/num_bins   # number of stocks in each bin
+low_beta_bin<-1:bin_size        # low beta stocks position
+high_beta_bin<-(num_stocks-bin_size+1):num_stocks  # high beta stocks position
+num_samples<-50                 # number of samples randomly chosen from each bin for each run of the simulation
+
+run_expt<-function(bin) {
+  samples<-beta_sorted[sample(bin, size=num_samples), ]$Annualized_Return_5Year
+  mean_returns<-mean(samples)
+  mean_returns
+}
+
+# run the simulation to compare returns of low beta stocks vs high beta stocks
+B<-10^5
+returns_low_beta<-replicate(B, run_expt(low_beta_bin))
+mean_returns_low_beta<-mean(returns_low_beta)
+sd_returns_low_beta<-sd(returns_low_beta)
+
+returns_high_beta<-replicate(B, run_expt(high_beta_bin))
+mean_returns_high_beta<-mean(returns_high_beta)
+sd_returns_high_beta<-sd(returns_high_beta)
+
+# tabulate the results
+returns_results<-data_frame(Classification="Low Beta", 
+                         Mean_Returns=round(mean_returns_low_beta, 3), SD_Returns=round(sd_returns_low_beta, 3))
+returns_results<-bind_rows(returns_results, 
+                    data_frame(Classification="High Beta", 
+                               Mean_Returns=round(mean_returns_high_beta, 3), SD_Returns= round(sd_returns_high_beta, 3)))
+returns_results %>% kable
+
+# Monte Carlo simulation appears to be in agreement with the regression model.
+
 ```
