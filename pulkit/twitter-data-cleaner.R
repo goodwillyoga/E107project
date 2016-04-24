@@ -3,7 +3,7 @@ library(jsonlite)
 library(dplyr)
 
 # File Location where the dump is to be saved, If a file already exists we load the existing data and merge the new data to it and write back to this location
-existingDataLocation <- "/code/CSCIE-107/E107project/pulkit/twitter.RData"
+existingTweetsDataLocation <- "/code/CSCIE-107/E107project/pulkit/twitter.RData"
 # File location for the zipped files, when the files are processed they are moved from this directory to a new location using  getDestinationFileName function
 files <- list.files("/code/tot/Info/twitter-data/unprocessesed/",pattern = "^twitter.json_",full.names = TRUE)
 
@@ -111,9 +111,9 @@ read_extract <- function(filename) {
 results <- invisible(lapply(files, read_extract))
 
 # Check if there is an existing dump of the data
-if(file.exists(existingDataLocation)){
+if(file.exists(existingTweetsDataLocation)){
   # Load the existing data, this will result in creation of dataframes for tweets, hashtags, symbols, users
-  load(existingDataLocation)
+  load(existingTweetsDataLocation)
 }else{
   tweets<- data.frame(id_str=character(),text=character(),reply_to=character(),reply_usr_id=character(),user_id=character(),time_stamp=character(),
                     retweeted=logical(),retweeted_count=numeric(),retweeted_from_id=character(),retweeted_from_count=numeric(),
@@ -136,7 +136,7 @@ gc()
 # remove duplicate users and select the last entry for them
 users <- users[ !duplicated(users$user_id,fromLast=TRUE), ]
 # Save the file to the same location so that it can be read back when next data is available
-save(tweets, users,hashtags,symbols, file = existingDataLocation)
+save(tweets, users,hashtags,symbols, file = existingTweetsDataLocation)
 
 # Move the files as they have been processed successfully.
 if(length(files)){
