@@ -33,7 +33,7 @@ public class Main {
         String tweetsFileName = "twitter.json";
         String[] monitoredStocks = MonitoredStocks.getStocks();
         StockPriceExtractor spe = new StockPriceExtractor();
-        StockTweetExtractor ste = new StockTweetExtractor(args[0], args[1], args[2], args[3],monitoredStocks);
+        /*StockTweetExtractor ste = new StockTweetExtractor(args[0], args[1], args[2], args[3],monitoredStocks);
         ste.setup();
         BlockingQueue<String> messages = ste.getMessageQueue();
         Thread t1 = new Thread(new Runnable() {
@@ -66,7 +66,7 @@ public class Main {
                 }
             }
         });
-        t1.start();
+        t1.start();*/
         scheduler.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -82,9 +82,9 @@ public class Main {
             for (Map.Entry<String, Stock> current : stocks.entrySet()) {
                 StockQuote quote = current.getValue().getQuote();
                 if (quote.getLastTradeTime() != null) {
-                    out.println(current.getKey() + "," + quote.getPrice() + "," + sdf.format(quote.getLastTradeTime().getTime()) + "," + quote.getLastTradeTime().getTime() + "," + quote.getDayHigh() + "," + quote.getDayLow() + ","
-                            + quote.getVolume() + "," + quote.getChangeFromYearHigh() + "," + quote.getChangeFromYearLow() + "," + quote.getOpen() + "," + quote.getChange() + ","
-                            + quote.getPreviousClose());
+                    out.println(current.getKey() + "," + quote.getPrice() + "," + sdf.format(quote.getLastTradeTime().getTime()) + "," + quote.getLastTradeTime().getTime() + ","
+                            + quote.getDayHigh() + "," + quote.getDayLow() + "," + quote.getVolume() + "," + quote.getChangeFromYearHigh() + "," + quote.getChangeFromYearLow() + ","
+                            + quote.getOpen() + "," + quote.getChange() + "," + quote.getPreviousClose());
                 }
             }
         } catch (IOException e) {
