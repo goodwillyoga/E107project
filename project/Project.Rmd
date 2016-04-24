@@ -1,0 +1,195 @@
+---
+title: "Project"
+author: "Mohan"
+date: "April 23, 2016"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r, messages=FALSE, warning=FALSE}
+## put your code here
+library(dplyr)
+library(readr)
+library(ggplot2)
+theme_set(theme_bw(base_size = 16))
+library(gganimate)
+library(knitr)
+library(broom)
+```
+
+Load beta of a universe of stocks
+
+```{r, warning=FALSE}
+url <- "https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/2500%20Stocks%20Financial%20Data.csv"
+financial_data <- read_csv(url)
+
+# data wrangling - rename columns etc
+names(financial_data)[names(financial_data) == 'Beta (5 Yr Annualized)'] <- 'Beta_5Year'
+names(financial_data)[names(financial_data) == 'Total Return (5 Yr Annualized)'] <- 'Annualized_Return_5Year'
+names(financial_data)[names(financial_data) == 'Sector/Industry'] <- 'Sector'
+
+head(financial_data, 2)
+
+ggplot(financial_data, aes(x=Beta_5Year)) + 
+  geom_histogram(aes(y=..density..), bins=20, colour="black", fill="white") + 
+  geom_density(alpha=0.2, fill="#FF6666") +
+  geom_vline(aes(xintercept=median(Beta_5Year)), color="red", linetype="dashed", size=1) +
+  ggtitle("Beta distribution")
+
+# Plot beta group_by sector to understand patterns
+sectors<-c('Utilities', 'Consumer Staples', 'Health Care', 'Information Technology', 'Energy', 'Industrials', 'Consumer Discretionary' , 'Materials', 'Financials')
+filter(financial_data, Sector %in% sectors) %>%
+  ggplot(aes(x=Beta_5Year)) + 
+  geom_histogram(aes(y=..density..), bins=20, colour="black", fill="white") + 
+  geom_density(alpha=0.2, fill="#FF6666") +
+  facet_wrap(~Sector)
+
+# Summarize beta per sector
+sectors_beta<-financial_data %>% filter(Sector %in% sectors) %>%
+  group_by(Sector) %>%
+  summarize(Beta_Median=round(median(Beta_5Year), 3), 
+            Beta_Mean=round(mean(Beta_5Year), 3), 
+            Beta_SD=round(sd(Beta_5Year), 3),
+            Returns_Mean=round(mean(Annualized_Return_5Year), 3),
+            Returns_SD=round(sd(Annualized_Return_5Year), 3)) %>% 
+  arrange(Beta_Median)
+
+all_beta<-financial_data %>% 
+  summarize(Beta_Median=round(median(Beta_5Year), 3), 
+            Beta_Mean=round(mean(Beta_5Year), 3), 
+            Beta_SD=round(sd(Beta_5Year), 3),
+            Returns_Mean=round(mean(Annualized_Return_5Year), 3),
+            Returns_SD=round(sd(Annualized_Return_5Year), 3))
+all_beta$Sector<-"ALL"
+all_beta<-all_beta[,c("Sector", "Beta_Median", "Beta_Mean", "Beta_SD", "Returns_Mean", "Returns_SD")]
+
+sectors_beta<-rbind(sectors_beta, all_beta)
+sectors_beta %>% kable
+
+# It is clear that beta for utilities is very low as expected. Utilities tend to fluctuate less with the market as they are basic necessaties. On the other hand, industrials and materials are cyclical type and their beta tends to be very high. Financials have almost perfect correlation with S&P500 with beta almost 1.
+
+# Also it is clear that returns are different for different beta. We will later see if there is a clear relation between returns and beta for a universe of 2500 stocks.
+  
+```
+
+Data wranging with historical prices - SPY and 3 chosen stocks
+
+```{r, warning=FALSE}
+SPY_url<-"https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/SPY%20weekly%2010%20years.csv"
+SPY_history<-read_csv(SPY_url)
+
+ED_url<-"https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/ED%20weekly%2010%20years.csv"
+ED_history<-read_csv(ED_url)
+
+ADSK_url<-"https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/ADSK%20weekly%2010%20years.csv"
+ADSK_history<-read_csv(ADSK_url)
+
+IBM_url<-"https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/IBM%20weekly%2010%20years.csv"
+IBM_history<-read_csv(IBM_url)
+
+# build a consolidated frame with weekly returns (%) for SPY/ED/ADSK/IBM
+stocks<-data.frame(Date=SPY_history$Date, 
+                   SPY.Close=SPY_history$Close, SPY.Volume=SPY_history$Volume, SPY.LastClose=SPY_history$Close, 
+                   ED.Close=ED_history$Close, ED.Volume=ED_history$Volume, ED.LastClose=ED_history$Close, 
+                   ADSK.Close=ADSK_history$Close, ADSK.Volume=ADSK_history$Volume, ADSK.LastClose=ADSK_history$Close,
+                   IBM.Close=IBM_history$Close, IBM.Volume=IBM_history$Volume, IBM.LastClose=IBM_history$Close)
+
+numRows<-nrow(SPY_history)
+
+# populate last week return to facilitate calculating weekly % returns
+stocks$SPY.LastClose[1:numRows-1]<-SPY_history$Close[2:numRows]
+stocks$ED.LastClose[1:numRows-1]<-ED_history$Close[2:numRows]
+stocks$ADSK.LastClose[1:numRows-1]<-ADSK_history$Close[2:numRows]
+stocks$IBM.LastClose[1:numRows-1]<-IBM_history$Close[2:numRows]
+
+
+# compuate weekly % returns
+stocks<-mutate(stocks, SPY.Returns=round((SPY.Close-SPY.LastClose)*100/SPY.LastClose, 3),
+               ED.Returns=round((ED.Close-ED.LastClose)*100/ED.LastClose, 3),
+               ADSK.Returns=round((ADSK.Close-ADSK.LastClose)*100/ADSK.LastClose, 3),
+               IBM.Returns=round((IBM.Close-IBM.LastClose)*100/IBM.LastClose, 3))
+
+
+head(stocks, 2)
+
+# Summarize weekly returns
+SPX_Weekly_Returns<-summary(stocks$SPY.Returns)
+ED_Weekly_Returns<-summary(stocks$ED.Returns)
+ADSK_Weekly_Returns<-summary(stocks$ADSK.Returns)
+IBM_Weekly_Returns<-summary(stocks$IBM.Returns)
+Weekly_Returns<-rbind(SPX_Weekly_Returns, ED_Weekly_Returns)
+Weekly_Returns<-rbind(Weekly_Returns, ADSK_Weekly_Returns)
+Weekly_Returns<-rbind(Weekly_Returns, IBM_Weekly_Returns)
+Weekly_Returns %>% kable
+
+```
+
+
+Betacomputation: case Study of 3 stocks
+
+```{r, warning=FALSE}
+# Correlation
+ED_cor<-cor(stocks$ED.Returns, stocks$SPY.Returns)
+ADSK_cor<-cor(stocks$ADSK.Returns, stocks$SPY.Returns)
+IBM_cor<-cor(stocks$IBM.Returns, stocks$SPY.Returns)
+
+# Beta is the slope of the regression line between SPY returns and the stock returns
+# Use SPY returns to predict individual stock returns
+ED_beta<-tidy(lm(stocks$ED.Returns ~ stocks$SPY.Returns), conf.int=TRUE) %>% 
+  filter(term == "stocks$SPY.Returns")
+ADSK_beta<-tidy(lm(stocks$ADSK.Returns ~ stocks$SPY.Returns), conf.int=TRUE) %>% 
+  filter(term == "stocks$SPY.Returns")
+IBM_beta<-tidy(lm(stocks$IBM.Returns ~ stocks$SPY.Returns), conf.int=TRUE) %>% 
+  filter(term == "stocks$SPY.Returns")
+
+# use kable to show beta estimates, p values, r-squared and CI values
+ED_beta$term[1]<-"Beta (ED)"
+ADSK_beta$term[1]<-"Beta (ADSK)"
+IBM_beta$term[1]<-"Beta (IBM)"
+beta_est<-union(IBM_beta, union(ED_beta, ADSK_beta))
+beta_est<-mutate(beta_est, r=c(ED_cor, ADSK_cor, IBM_cor))
+beta_est<-mutate(beta_est, r.squared_perc=round(r*r*100, 3))
+beta_est %>% kable
+
+# plot using smoothing
+ggplot_lm<-function(stock_col) {
+  stocks %>% filter(SPY.Returns >= -10) %>% 
+    ggplot(aes_string(x="SPY.Returns", y=stock_col)) + 
+    geom_point() +
+    geom_smooth(method="lm", se = TRUE) +
+    ggtitle(paste(stock_col, " returns against SPY"))
+}
+
+ggplot_lm("ED.Returns")
+ggplot_lm("ADSK.Returns")
+ggplot_lm("IBM.Returns")
+
+```
+
+We now want to study if a portfolio of low-volatility stocks earn returns different from a portfolio of high-volatility stocks. We will do this using regression as well as simulation
+
+Regression of stock returns using beta (predictor) 
+```{r, warning=FALSE}
+beta_cor<-cor(financial_data$Annualized_Return_5Year, financial_data$Beta_5Year)
+beta_returns<-tidy(lm(Annualized_Return_5Year ~ Beta_5Year, financial_data), conf.int=TRUE) %>% 
+  filter(term == "Beta_5Year")
+beta_returns$r<-beta_cor
+beta_returns$r.squared_perc<-beta_cor * beta_cor * 100
+
+beta_returns %>% kable
+
+financial_data %>%  
+  ggplot(aes_string(x="Beta_5Year", y="Annualized_Return_5Year")) + 
+  geom_point() +
+  geom_smooth(method="lm", se = TRUE) +
+  ggtitle("Beta vs Annualized_Returns (5 Year)")
+  
+```
+
+MonteCarlo simulation 
+```{r, warning=FALSE}
+set.seed(1234)
+```
