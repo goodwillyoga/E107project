@@ -16,5 +16,5 @@ for(i in c(1:5000000000)){
   }, error = function(err) {
     print(paste("ERROR:  ",err))
   })
-  Sys.sleep(60)
+  Sys.sleep(15*60)
 }

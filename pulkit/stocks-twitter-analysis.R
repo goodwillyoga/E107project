@@ -87,7 +87,6 @@ stat$id_Str <- tweets_tmp$id_str
 # classify them to positive/nagative 
 stat <- mutate(stat, tweet=ifelse(stat$score > 0, 'positive', ifelse(stat$score < 0, 'negative', 'neutral')))
 by.tweet <- group_by(stat, tweet, created) %>% summarise( number=n())
-by.tweet <- 
 
 ggplot(by.tweet, aes(created, number)) + geom_line(aes(group=tweet, color=tweet), size=2) +
   geom_point(aes(group=tweet, color=tweet), size=4) +
