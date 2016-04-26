@@ -1,0 +1,10 @@
+Symbol,Company Name,Security Type,Security Price,Market Capitalization,Sector/Industry,Industry,Volume (90 Day Avg),Price Performance (52 Weeks),Total Return (5 Yr Annualized),Standard Deviation (5 Yr Annualized),P/E (Next Year's Estimate),Beta (5 Yr Annualized),Dividend Yield,Shares Outstanding,Institutional Ownership,Beta (10 Yr Annualized),Beta (1 Year Annualized)
+TALN,Talon International Inc,CS,0.1501,$13.8M,Consumer Discretionary,"Textiles, Apparel & Luxury Goods",0.0285,-16.66667,10.75663,2.2167,15,0.006669135,,92.268,0.0436,0.560115835,0.75873224
+ED,Consolidated Edison Inc.,CS,62.15,$18.2B,Utilities,Multi-Utilities,2.09986,-1.48852,9.82558,0.15303,15.28586,0.017372514,4.17939,293.192,52.6448,0.219758737,0.274931187
+IIJI,Internet Initiative Japan Inc,DR,9.32,$827.1M,Information Technology,Internet Software & Services,0.00158,-11.93393,10.56512,0.40247,22.30952,0.018474987,,91.905,0.5196,1.166029463,1.118202235
+NEM,Newmont Mining Corp,CS,18.42,$9.2B,Materials,Metals & Mining,8.75166,-5.48913,-19.88953,0.36968,21.13001,0.025233894,0.57504,529.118,80.6433,0.261511773,0.634888237
+APPS,Digital Turbine Inc,CS,1.53,$98.4M,Information Technology,Software,0.31961,-53.4375,-2.60258,0.86178,19.10256,0.027596759,,66.072,27.5585,,-0.236587646
+ITC,ITC Holdings Corp,CS,36.8799,$5.2B,Utilities,Electric Utilities,1.39788,-11.18421,12.80138,0.16944,16.26724,0.030283859,2.22222,153.419,89.8626,0.564790631,0.394395501
+SO,Southern Co (The),CS,44.545,$40.5B,Utilities,Electric Utilities,4.93788,-6.00886,8.28747,0.12227,15.12725,0.048497196,4.86765,908.939,49.5845,0.261776269,0.268533218
+MAMS,MAM Software Group Inc,CS,7.34,$105.8M,Information Technology,Software,0.01139,26.82758,37.15935,0.36307,27.22222,0.073306587,,14.435,32.1979,,-0.046883241
+GFI,Gold Fields Ltd,DR,2.54,$1.9B,Materials,Metals & Mining,5.8349,-46.81319,-27.66622,0.43083,13.70787,0.087245083,0.80376,778.115,37.1714,0.433367048,-0.822598226
