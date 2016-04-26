@@ -3,7 +3,17 @@ library(readr)
 library(lubridate)
 library(stringr)
 library(ggplot2)
+library(gridExtra)
+# Following is the list of all the stocks which we have downloaded the tweets and the stocks from Yahoo finance
 tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR","XOM","PSX","VLO","PGR","CINF","FAF","JBLU","DAL","HA","ACN","INFY","CTSH")
+# Sectors associate with each stock
+sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
+             "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology","Basic Materials","Basic Materials","Basic Materials","Financial","Financial","Financial",
+             "Services-Airlines","Services-Airlines","Services-Airlines","Technology","Technology","Technology")
+
+ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
+table(ticker_sector$sector)
+# We have only 2 stocks in Utilities and 1 in telecommunication, we will not use them for sectorwise analysis
 
 existingStocksDataLocation <- "/code/CSCIE-107/E107project/pulkit/yahoo-finance.RData"
 existingTweetsDataLocation <- "/code/CSCIE-107/E107project/pulkit/twitter.RData"
@@ -11,13 +21,7 @@ null_value <- 0
 load(existingTweetsDataLocation)
 load(existingStocksDataLocation)
 
-# remove all null's in stocks for columns open, daysHigh, daysLow with 0
-stocks %>% mutate( open=ifelse(open!='null', open,null_value), 
-                  daysHigh = ifelse(daysHigh!='null', daysHigh,null_value), 
-                  daysLow = ifelse(daysLow != 'null', daysLow, null_value )) 
-
-filter(stocks, symbol=='CGPX' & !is.numeric(daysHigh))
-
+#conver the date to proper format
 convert_24Time <- function(x){
   ret <- ''
     splitVector<- strsplit(x,':')
@@ -30,16 +34,41 @@ convert_24Time <- function(x){
     })
   return(ret)
 }
+
+# Data obtained from Yahoo finance is in EST timezone.
 # The date we recieve from yahoo finance is of the form 2:54PM, let us convert it into 14:54 and take away the PM part
 tmp1<- stocks %>% mutate(date_time = paste(lastTradeDate,convert_24Time(lastTradeTime)))
-# use lubridate and convert to date_time
+
+# Add the sectors column to the dataset
+tmp1 <- inner_join(tmp1,ticker_sector)
+
+# Now let us use lubridate and convert to date_time
 tmp1 <- tmp1 %>% mutate(date_timelb = mdy_hm(date_time), daysHigh = as.numeric(daysHigh), daysLow = as.numeric(daysLow), open = as.numeric(open), prvClose= as.numeric(prvClose))
-
-
-tmp1 <- tmp1 %>% filter(!is.na(daysHigh))
+# The trading hours vary from 9:30 a.m. to 4:00 p.m EST. After the tradinng hours when we query the api it keeps on returning the values for that day. 
+nrow(tmp1)
+# Let us get the distict values for all the stocks
 tmp1 <- distinct(tmp1)
-ggplot(tmp1, aes(date_timelb,price, color=symbol))+ geom_line()+scale_y_log10()
+nrow(tmp1)
 
+# We started collecting data from April 6th. Let us look at the data for April 7th and see how we can find out the days high/low and volume from this, we will take the yahoo stock to look at this
+tmp1 %>% filter(symbol == 'YHOO') %>% mutate(day = mdy(lastTradeDate)) %>% group_by(day) %>% filter(volume == max(volume)) %>% ggplot(aes(date_time,price,size = volume)) + geom_point() 
+
+# Some things to see, the prvClose is always the last price that we see for the previous day. The time is always the 4:00pm.  We can also see that there are a few missing days 9/10, 16/17, 23/24 
+# These are weekends and the markets remain close on these days
+
+# Let us make plots of price variations of stocks based on there sectors for the entire period of days in the similar fashion.
+
+dailyStockData <- tmp1 %>% mutate(day = mdy(lastTradeDate)) %>% group_by(day,symbol) %>% filter(volume == max(volume)) 
+# We know that we have the largest number of technology sector stock let us plot them together.
+dailyStockData %>% filter(sector == 'Technology') %>% ggplot(aes(day,price, group=symbol, color = symbol)) + geom_line()
+# Let us plot all the other stocks together 
+dailyStockData %>% filter(!sector %in% c('Technology',"Utilities","Telecommunications")) %>% ggplot(aes(day,price, group=symbol, color = symbol)) + geom_line()
+
+# let us make another dataset of hourly stock prices, we will take the last entry of the hour and use the price corresponding to that entry for that hour
+hourlyStockData <- tmp1 %>% mutate(day = mdy(lastTradeDate), hr = hour(date_timelb)) %>% group_by(symbol,day,hr) %>% filter(volume == max(volume)) 
+
+# Let us plot the hourly plot of the data for yahoo stocks over the entire time duration
+hourlyStockData %>% filter(symbol == 'YHOO') %>% ggplot(aes(date_timelb, price))+geom_line()
 
 ####################### Below is specific to tweets #############################
 # Convert the date to New_york timezone as all the stock prices are also available in that timezone
@@ -48,9 +77,16 @@ tweets_tmp <- mutate(tweets, date_timelb = as.POSIXct(as.numeric(time_stamp)/100
 # Let us do EDA on the tweets
 tweets_tmp %>% group_by(user_id) %>% summarize(count=n()) %>% filter(count >5) %>% ggplot(data=., aes(log(count)))+geom_histogram()
 
-# Let us see who are the top 40 authors
-tweets_tmp %>% group_by(user_id) %>% summarize(count=n()) %>% filter(count >5) %>% inner_join(users) %>% arrange(desc(count)) %>% print(n=40)
+# Let us see who are the top 20 authors, and also view the follower count and friend count for them
+tweets_tmp %>% group_by(user_id) %>% summarize(count=n()) %>% filter(count >5) %>% inner_join(users) %>% arrange(desc(count)) %>% print(n=20)
 
+# Let us see number of tweets by company, this data is stored in sysmbols, Each tweet can have multiple symbols
+inner_join(tweets_tmp,symbols) %>% filter(symbols %in% tickers_symbols) %>% group_by(symbols) %>% summarize(count = n())  %>% ggplot(aes(symbols, count)) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+# Let us see number of tweets per day
+inner_join(tweets_tmp,symbols) %>% filter(symbols %in% tickers_symbols) %>% mutate(day = day(date_timelb)) %>% group_by(day) %>% summarize(count = n()) %>% ggplot(aes(day, count)) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# Let us see number of tweets per sector per week
+inner_join(tweets_tmp,symbols) %>% filter(symbols %in% tickers_symbols) %>% inner_join(ticker_sector, by = c("symbols"="symbol")) %>% mutate(week = week(date_timelb)) %>% group_by(sector,week) %>% summarize(count = n()) %>% ggplot(aes(day, count)) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # Load a list of positive and -ve words 
 pos <- scan('/code/CSCIE-107/E107project/pulkit/opinion-lexicon-English/positive-words.txt', what='character', comment.char=';') #folder with positive dictionary

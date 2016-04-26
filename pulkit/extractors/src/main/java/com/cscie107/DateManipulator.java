@@ -24,22 +24,33 @@ public class DateManipulator {
 
     static Map<String,String> stockYearHigh = new HashMap<>();
     static Map<String,String> stockYearLow = new HashMap<>();
+    static Map<String,String> stockDayHigh = new HashMap<>();
+    static Map<String,String> stockDayLow = new HashMap<>();
+    static Map<String,String> stockopen = new HashMap<>();
 
     static {
         try {
-            File actualExtractedFile = new File("/code/tot/Info/twitter-data/unprocessesed/stocks.csv");
+            File actualExtractedFile = new File("/code/tot/Info/twitter-data/stocks-higlow-open-alldays.csv");
             Reader reader = new FileReader(actualExtractedFile);
             CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT);
             for (final CSVRecord record : parser) {
-                String symbol = record.get(0);
-                String yearHigh = record.get(7);
-                String yearLow = record.get(8);
+                String dateStr = record.get(2);
+                String symbol = record.get(1);
+                String dayHigh = record.get(3);
+                String dayLow = record.get(4);
+
+                String yearHigh = record.get(5);
+                String yearLow = record.get(6);
+                String open = record.get(7);
                 if(yearHigh !=null && !yearHigh.equals("N/A") && !yearHigh.equals("null")){
                     stockYearHigh.put(symbol,yearHigh);
                 }
                 if(yearLow !=null && !yearLow.equals("N/A") && !yearLow.equals("null")){
                     stockYearLow.put(symbol,yearLow);
                 }
+                stockDayHigh.put(symbol+dateStr,dayHigh);
+                stockDayLow.put(symbol+dateStr,dayLow);
+                stockopen.put(symbol+dateStr,open);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,6 +94,11 @@ public class DateManipulator {
                             String yearHigh = stockYearHigh.get(symbol);
                             String yearLow = stockYearLow.get(symbol);
                             String open = record.get(9);
+                            if(open.isEmpty() || "null".equals(open)){
+                                open = stockopen.get(symbol+lastTradeDate);
+                                dayHigh = stockDayHigh.get(symbol+lastTradeDate);
+                                dayLow = stockDayLow.get(symbol+lastTradeDate);
+                            }
                             String change = record.get(10);
                             String previousClose = record.get(11);
 
