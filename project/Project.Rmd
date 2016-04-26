@@ -6,19 +6,19 @@ output: html_document
 
 #Background and Motivation
 
-The primary motivation of the project is to highlight the "risk" associated with Stocks by applying various statistical methods to measure risk factors such as “Market Sentiment” ("Beta", "Standard Deviation") and “Social Sentiment” (“Twitter feeds”). The fundamental reason to choose a topic in finance is partly current experience working in the industry and partly to understand the significance of "risk" being an end investor. Many of us manage different types of brokerage accounts (stock trading, 401k and IRA accounts) without clearly understanding the differing risk associated with the performance of these accounts. The risk appetite itself differs widely with different classes of investors depending on their personal situation and other factors. Hence it is prudent for such investors to understand the risk factors associated with their individual stocks or funds. Further, the recent advances in the social media has provided a wealth of information in the form of Twitter feeds or Google trends that can further provide great insight on the sentiment of investors influenced by market and other events. This research is an attempt to highlight concepts around "risk" factors by performing a thorough statistical analysis backed by appropriate models. 
+The primary motivation of the project is to highlight the "risk" associated with Stocks by applying various statistical methods to measure risk factors such as “Market Sentiment” ("Beta", "Standard Deviation") and “Social Sentiment” (“Twitter feeds”). The fundamental reason to choose a topic in finance is partly current experience working in the industry and partly to understand the significance of "risk" being an end investor. Many of us manage different types of brokerage accounts (stock trading, 401k and IRA accounts) with no clear understanding of different risk factors associated with the returns of these accounts. The risk appetite itself differs widely with different classes of investors depending on their personal situation and other factors. Hence it is prudent for such investors to understand the risk factors associated with their individual stocks or funds. Further, the recent advances in the social media has provided a wealth of information in the form of Twitter feeds or Google trends that can further provide great insight on the sentiment of investors influenced by market and other events potentially influenced by insider info. This research is an attempt to highlight various factors that actually affect stock volatility shown by appropriate statistical analysis and models. 
 
 #Project Objectives 
 
-Volatility is a statistical measure of the dispersion of returns for a given security or market-index. Commonly, the higher the volatility, the riskier the security. The volatility itself is affected by multiple factors such as “Beta”, “Standard Deviation”, “Earnings”, “Balance Sheet”, “Analyst Recommendations” and “Social Sentiment”.  We will start with the concept of Beta as a measure of volatility of a stock relative to the benchmark (like S&P 500) and analyze how it affects the returns of a stock relative to the benchmark. In particular, we will run a simple case study by choosing three stocks with widely differing returns relative to the benchmark (S&P 500) to emphasize the effect of beta on such classes of stocks. We will then generalize this a bit more, by comparing Beta (risk) for a universe of stocks against their respective returns for a chosen period and more important, we want to understand if a portfolio of low-volatility stocks earn returns different from a portfolio of high-volatility stocks. This is one of the fundamental questions that this research ponders upon by providing a statistical insight into the results. We will then repeat the analysis using Standard Deviation as the volatility measurement. The way we present this part of the material is by running a multiple regression model on stock’s return using beta and standard deviation as predictors. 
-While the main focus of this research paper is on stock’s beta and standard deviation, we will also introduce other significant measures of volatility such as Twitter/Stocktwits feeds that is gaining momentum since the advent of Social Media Revolution. This is primarily done to make the investigation complete. .
+Volatility is a statistical measure of the dispersion of returns for a given security or market-index. Commonly, the higher the volatility, the riskier the security. The volatility itself is affected by multiple factors such as “Beta”, “Standard Deviation”, “Company Earnings”, “Company Balance Sheet”, “Analyst Recommendations” and “Social Sentiment”.  We will start with the concept of Beta as a measure of volatility of a stock relative to the benchmark (like S&P 500) and analyze how it affects the returns of a stock relative to the benchmark. In particular, we will run a simple case study by choosing three stocks with widely differing returns relative to the benchmark (S&P 500) to emphasize the effect of beta on such classes of stocks. We will then generalize this a bit more, by comparing Beta (risk) for a universe of stocks against their respective returns for a chosen period and more important, we want to understand if a portfolio of low-volatility stocks earn returns different from a portfolio of high-volatility stocks. This is one of the fundamental questions that this research ponders upon by providing a statistical insight into the results. We will then repeat the analysis using Standard Deviation as the volatility measurement. The way we present this part of the material is by running a multiple regression model on stock’s return using beta and standard deviation as predictors. 
+While the main focus of this research paper is on stock’s beta and standard deviation, we will also analyse other factors that could potentially affect the volatility such as Twitter feeds that has been gaining momentum since the advent of Social Media Revolution. This is primarily done to make this investigation complete. .
 
 ##Concepts and Methods:
 **Beta**: A quantitative measure of the volatility of a stock relative to the benchmark index, S&P 500, which is generally considered representative of the overall US securities market. Specifically, Beta is the performance the stock has experienced in the last 60 months as the S&P 500 moved 1% up or down. 
 
 A Beta of 1 indicates the stock's price will move with the S&P 500. A Beta of less than 1 means it will be less volatile than the S&P 500. Generally, the higher the Beta, the riskier the investment. For e.g. - utilities and food stocks which are considered relatively safe have a beta of less than 1. On the other hand, technology and auto stocks which are considered riskier have a beta more than 1. A beta of 1.10 shows that the stock has performed 10% better than its benchmark in up markets and 10% worse in down markets, assuming all other factors remain constant. Conversely, a beta of 0.85 indicates that the stock’s return is expected to perform 15% worse than the benchmark's return during up markets and 15% better during down markets.
 
-A stock's Beta is the covariance between the return on the stock (%) and the return on the index (%), compared to the variance of the index. In other words, this is the slope of the least squares regression line fit between S&P 500 returns (predictor) and stock’s returns.
+A stock's Beta is the covariance between the return on the stock (%) and the return on the index (%), compared to the variance of the index. In other words, **beta is the slope of the least squares regression line fit between S&P 500 returns (predictor) and stock’s returns**.
 $$
 β = Cov(Stock return, Index return) / Var(Index return)	= σxy / σ^2x
 where x = S&P 500 return, y = stock return 
@@ -34,20 +34,10 @@ Using the population of stock returns for the past 10 years, we can represent ab
 
 **Standard Deviation**: The standard deviation is another statistical measure of a stock’s volatility. It indicates the tendency of the returns to rise or fall drastically in a short period of time. A security that is volatile is also considered higher risk because its performance may change quickly in either direction at any moment. Such volatile stocks typically have a high standard deviation.
 
+**Twitter Volume**: <TODO>
 
-##Assumptions:
-1.	The historical weekly close prices reflect changes in the real values of stocks for the chosen period.
+**Twitter Sentiment Score**: <TODO>
 
-2.	Note that Beta can change depending on the duration of the time period, but its relation w.r.t the index returns remains the same. So specific duration of beta is not relevant as such for our analysis, but for Beta calculation, we focus on calculating the 10-year Beta (2005-2015) annualized basis.
-
-3.	Total returns (5-year Annualized) of a stock is used to evaluate the relationship b/n beta and stock returns.
-
-4.	We have chosen the exchange traded fund (SPX) as a proxy for S&P 500 index performance when comparing returns of individual stocks against benchmark. 
-
-5.	We will use the adjacent table to interpret the strength of the correlation coefficient values.
-
-
-# Beta Analysis
 
 ```{r, messages=FALSE, warning=FALSE, echo=FALSE}
 ## put your code here
@@ -61,7 +51,51 @@ library(gganimate)
 library(broom)
 ```
 
-**Load beta of a universe of stocks**
+##Data Description:
+1.	The first part of analysis around beta uses the public data available in Yahoo! Finance (http://finance.yahoo.com/) and Fidelity investment websites (https://research2.fidelity.com/Screener).
+
+2. The second part of analysis around social sentiment involves scrapping social media feeds from two popular websites - http://www.stocktwits.com/symbol/AAPL?q=AAPL and https://twitter.com/search?q=%24AAPL&src=ctag.
+
+3.	The first dataset consists of four dataframes with historical stock prices for three chosen stocks and the S&P index (SPY) for a period of 10 years (2006 to 2016). This is extracted from the Yahoo finance and has weekly stock prices for the chosen period.
+```{r, echo=FALSE}
+stock_history_sample<-read_csv("https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/Stock%20Historical%20Data%20-%20Sample.csv")
+stock_history_sample %>% head(4) %>% kable
+```
+
+4. The second dataset has the universe of US stocks with Beta falling in the range (0 to 5.0). Fidelity stock screener provides tools to extract relevant data including stock attributes (data variables) such as Beta (1/5/10 year annualized), Sector (industry sector categorization), Total Return (5 year annualized), Standard Deviation etc
+```{r, echo=FALSE}
+stocks_data_sample<-read_csv("https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/Stocks%20Financial%20Data%20-%20Sample.csv")
+stocks_data_sample %>% head(4) %>% kable
+```
+
+5. The third dataset has the twitter volume data for a basket of stocks collected between Apr 6th and Apr 30th.
+```{r, echo=FALSE}
+# TODO
+```
+
+6. The fourth dataset has the twitter sentiment score for a basket of stocks collected during the same period as #3.
+```{r, echo=FALSE}
+# TODO
+```
+
+##Assumptions:
+1.	The historical weekly close prices reflect changes in the real values of stocks for the chosen period.
+
+2.	Note that Beta can change depending on the duration of the time period, but its relation w.r.t the index returns remains the same. So specific duration of beta is not relevant as such for our analysis, but for Beta calculation, we focus on calculating the 10-year Beta (2005-2015) annualized basis.
+
+3.	Total returns (5-year Annualized) of a stock is used to evaluate the relationship b/n beta and stock returns.
+
+4.	We have chosen the exchange traded fund (SPY) as a proxy for S&P 500 index performance when comparing returns of individual stocks against benchmark. 
+
+5.	We have chosen 3 stocks (ED, ADSK, IBM) for our case study to understand the effect of beta on stock returns.
+  a. ED (Consolidated Edison) is an Utility company whose returns are relatively lower compared to S&P500 and so its beta is expected to be lower (<0.5).
+  b. IBM (International Business Machines) is a technology company whose returns are relatively in line with S&P500 and so its beta is expected to be close to 1.0.
+  c. ADSK (AutoDesk) is an information services company whose returns are relatively higher compared to S&P500 and so its beta is expected to be higher (>1.0).
+
+
+# Beta Analysis
+
+**Load beta values for a universe of 2500+ stocks**
 
 ```{r, warning=FALSE, echo=FALSE}
 url <- "https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/2500%20Stocks%20Financial%20Data.csv"
@@ -75,8 +109,6 @@ names(financial_data)[names(financial_data) == 'P/E (Next Year\'s Estimate)'] <-
 names(financial_data)[names(financial_data) == 'Total Return (5 Yr Annualized)'] <- 'Annualized_Return_5Year'
 names(financial_data)[names(financial_data) == 'Sector/Industry'] <- 'Sector'
 names(financial_data)[names(financial_data) == 'Security Type'] <- 'SecurityType'
-
-select(financial_data, Symbol, SecurityType, Sector, Beta_5Year, Beta_1Year, SD_5Year, PE_NextYear, Annualized_Return_5Year) %>% head() %>% kable
 
 ggplot(financial_data, aes(x=Beta_5Year)) + 
   geom_histogram(aes(y=..density..), bins=20, colour="black", fill="white") + 
@@ -112,6 +144,8 @@ all_beta$Sector<-"ALL"
 all_beta<-all_beta[,c("Sector", "Beta_Median", "Beta_Mean", "Beta_SD", "Returns_Mean", "Returns_SD")]
 
 sectors_beta<-rbind(sectors_beta, all_beta)
+# replace any -ve returns to 0.0 as they are insignificant for our analysis
+sectors_beta<-mutate(sectors_beta, Returns_Mean=ifelse(Returns_Mean<0, 0.00, Returns_Mean))
 sectors_beta %>% kable
 
 # bar plot showing mean beta and stock-returns across sectors
@@ -123,14 +157,18 @@ ggplot(sectors_beta, aes(x=factor(Sector), y=Beta_Mean)) +
   scale_y_log10() +
   scale_x_discrete(labels = abbreviate) +
   ggtitle("Mean beta and returns across sectors")
-
-# It is clear that beta for different industry sectors are different with utilities and consumer staples having very low beta values as expected. Utilities and consumer staples tend to fluctuate less with the overall market sentiment as they are basic necessities. On the other hand, industrials and materials are cyclical in nature and their beta tends to be very high. Financials have almost perfect correlation with S&P500 with beta almost 1.
-
-# Also it is clear that returns are different for different beta. We will later see if there is a clear relation between returns and beta for a universe of 2500 stocks.
-  
 ```
 
-###Data wranging with historical prices - SPY and 3 chosen stocks
+Above plots presents the higtogram and summary stats of beta (overall and classified per sector) for a universe of 2500 stocks. The shape of the distribution is roughly mounded and symmetric and hence normal distribution can reasonably fit the data. X ~ N(µ , σ2) ~ N(1.2, 0.32).
+
+For investing purposes, Beta is further classified into categories (low/medium/high) which helps investors to choose the class of stocks they can invest depending on their risk appetite. Typically, risk-averse investors choose low beta stocks. We will basically be using three categories for our beta analysis in this paper - 0 to 0.90 (Low), 0.90 to 1.30 (Medium) and 1.30+ (High). Note that Beta can be negative as well, which means that stock returns is negatively correlated to the benchmark index returns. However, this is outside the scope of this paper.
+
+It is clear that beta for different industry sectors are different with utilities and consumer staples having very low beta values as expected. Utilities and consumer staples tend to fluctuate less with the overall market sentiment as they are basic necessities. On the other hand, industrials and materials are cyclical in nature and their beta tends to be very high. Financials have almost perfect correlation with S&P500 with beta almost 1.
+
+Also it is clear that returns are different for different beta. We will later see if there is a clear relation between returns and beta for a universe of 2500 stocks.
+  
+
+####Compute weekly returns using historical prices - SPY and 3 chosen stocks
 
 ```{r, warning=FALSE, echo=FALSE}
 SPY_url<-"https://raw.githubusercontent.com/goodwillyoga/E107project/master/Mohan/data/SPY%20weekly%2010%20years.csv"
@@ -161,14 +199,15 @@ stocks$ADSK.LastClose[1:numRows-1]<-ADSK_history$Close[2:numRows]
 stocks$IBM.LastClose[1:numRows-1]<-IBM_history$Close[2:numRows]
 
 
-# compuate weekly % returns
+# compute weekly % returns
 stocks<-mutate(stocks, SPY.Returns=round((SPY.Close-SPY.LastClose)*100/SPY.LastClose, 3),
                ED.Returns=round((ED.Close-ED.LastClose)*100/ED.LastClose, 3),
                ADSK.Returns=round((ADSK.Close-ADSK.LastClose)*100/ADSK.LastClose, 3),
                IBM.Returns=round((IBM.Close-IBM.LastClose)*100/IBM.LastClose, 3))
 
 
-head(stocks, 2)
+select(stocks, Date, SPY.Close, SPY.LastClose, SPY.Returns, ED.Close, ED.LastClose, ED.Returns) %>% head(2) %>% kable
+select(stocks, Date, IBM.Close, IBM.LastClose, IBM.Returns, ADSK.Close, ADSK.LastClose, ADSK.Returns) %>% head(2) %>% kable
 
 # Summarize weekly returns
 SPX_Weekly_Returns<-summary(stocks$SPY.Returns)
@@ -182,8 +221,10 @@ Weekly_Returns %>% kable
 
 ```
 
+###Beta Computation: Case Study of 3 stocks
+The next part of our analysis focusses on Beta calculation using simple linear regression for each of the three stocks with very distinct mean weekly returns. The summary stats for weekly returns as shown above provides a basic idea on how weekly returns of individual stocks are related to the benchmark (SPX) returns. The returns of IBM closely match the benchmark returns, while ED returns are significantly lower and ADSK significantly higher. We will now attempt to fit a linear regression model on each of the stocks against the benchmark returns to see if SPX returns can be used as a general predictor for a stock return using the stock’s estimated Beta.
 
-Betacomputation: case Study of 3 stocks
+The summary of correlation and regression model coefficients for the selected stocks against SPX is presented below. Note that, from the definition of Beta, the slope of the best fit line provides an estimate of its value. A detailed analysis of how beta is estimated for each stock follows.
 
 ```{r, warning=FALSE, echo=FALSE}
 # Correlation
@@ -205,9 +246,9 @@ ED_beta$term[1]<-"Beta (ED)"
 ADSK_beta$term[1]<-"Beta (ADSK)"
 IBM_beta$term[1]<-"Beta (IBM)"
 beta_est<-union(IBM_beta, union(ED_beta, ADSK_beta))
-beta_est<-mutate(beta_est, r=c(ED_cor, ADSK_cor, IBM_cor))
+beta_est<-mutate(beta_est, r=c(IBM_cor, ADSK_cor, ED_cor))
 beta_est<-mutate(beta_est, r.squared_perc=round(r*r*100, 3))
-beta_est<-rbind(beta_est, c('Beta (SPY)', '1.0', '0', '0', '0', '1', '1', '0', '0'))
+beta_est<-bind_rows(beta_est, data_frame(term="Beta (SPY)", estimate=1.0))
 beta_est<-mutate(beta_est, estimate=round(as.numeric(estimate), 2))
 beta_est %>% kable
 
@@ -218,25 +259,44 @@ ggplot(beta_est, aes(x=factor(term), y=estimate)) +
   ylab("Beta Estimate") +
   ggtitle("Case Study: Estimated Beta")
 
-# plot using smoothing
+# regression plot showing confidence intervals
 ggplot_lm<-function(stock_col) {
   stocks %>% filter(SPY.Returns >= -10) %>% 
     ggplot(aes_string(x="SPY.Returns", y=stock_col)) + 
     geom_point() +
     geom_smooth(method="lm", se = TRUE) +
-    ggtitle(paste(stock_col, " returns against SPY"))
+    ggtitle(paste(stock_col, " vs SPY"))
 }
-
-ggplot_lm("ED.Returns")
-ggplot_lm("ADSK.Returns")
-ggplot_lm("IBM.Returns")
 
 ```
 
+### Analysis for a low-beta stock (ED)
+The below plot shows the scatterplot of SPX weekly returns (%) vs the weekly returns (%) of a utility
+company (ED) over a period of last 10 years. The Correlation coefficient (0.50) suggests that there is a substantial positive relationship between stock returns of ED against SPX. Observe that there is no clear pattern in the scatterplot. The trend sort of appears linear, the data fall around the line with few outliers and the variance is roughly constant. So we could apply simple regression. The beta derived using simple linear regression came out to 0.44 (see Table 4), which is on the lower end (Table 2). This means, an increase or decrease of 1% in SPX returns, would result in a corresponding increase or decrease of 0.44% only with ED stock returns (on average). However, the trend is not strong enough suggesting that ED stock returns are less correlated against the market risk, making it a defensive stock. Note that regardless of how economy performs, utility companies will meet their revenue targets as they provide basic/mandatory services for the people. For this reason alone, people tend to invest in such defensive stocks during times of distress as this class of stocks present much lower risk. This is also very evident from the low-beta value signifying low correlation with the market returns (SPX). The R-Squared value suggests that only 25% of the variation in ED weekly returns can be explained by our model.
+
+```{r, warning=FALSE, echo=FALSE}
+ggplot_lm("ED.Returns")
+```
+
+### Analysis for a medium-beta stock (IBM)
+The below plot shows the scatterplot of SPX weekly returns against the weekly returns of IBM over the same period showing a clear linear trend. The rest of the conditions (data fall around the center line with few outliers and the variance is roughly constant) for a simple regression is also satisfied. The correlation coefficient (0.68) is much stronger in this case (compared to ED) suggesting a much higher correlation of stock returns against SPX.  The beta derived is 0.83 (Table 4) suggesting a much closer alignment with the market (SPX) returns. This reason alone makes IBM a cyclical stock, meaning its stock performance is tied up pretty much with the performance of the market overall. In times of distress, its stock returns should suffer at the same rate as the benchmark index (SPX). The R-Squared value came out as 0.46 (Table 4). This suggests that about 46% of variation in the IBM weekly returns can be explained by the model. This is much higher than the previous model (for ED stock).
+
+```{r, warning=FALSE, echo=FALSE}
+ggplot_lm("ADSK.Returns")
+```
+
+### Analysis for a high-beta stock (ADSK)
+The below plot shows the scatterplot of SPX weekly returns plotted against the weekly returns of ADSK over the same period showing a clear trend. The correlation coefficient (0.63) is very strong suggesting a very high correlation with the benchmark (SPX) returns. The beta derived in this case is 1.42 (Table 4) which is typically regarded high. This suggests very high volatility in stock price changes compared to the benchmark, presenting a much higher risk for the investors. The R-Squared value came out as 0.40 (Table 4) suggesting that 40% of variation in the ADSK weekly returns can be explained by the model.
+
+```{r, warning=FALSE, echo=FALSE}
+ggplot_lm("IBM.Returns")
+```
+
+#### Analysis of a basket of low-volatility stocks vs high-volatility stocks
 We now want to study if a portfolio of low-volatility stocks earn returns different from a portfolio of high-volatility stocks. We will do this using regression as well as simulation
 
 Regression of stock returns using beta (predictor) 
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 beta_cor<-cor(financial_data$Annualized_Return_5Year, financial_data$Beta_5Year)
 beta_returns<-tidy(lm(Annualized_Return_5Year ~ Beta_5Year, financial_data), conf.int=TRUE) %>% 
   filter(term == "Beta_5Year")
