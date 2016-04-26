@@ -1,4 +1,4 @@
-Symbol,Company Name,Security Type,Sector,Annualized_Return_5Year,Annualized_SD_5Year,PE_NextYear,Annualized_Beta_5Year,Shares Outstanding,Annualized_Beta_1Year
+Symbol,CompanyName,SecurityType,Sector,Annualized_Return_5Year,Annualized_SD_5Year,PE_NextYear,Annualized_Beta_5Year,TotalShares,Annualized_Beta_1Year
 TALN,Talon International Inc,CS,Consumer Discretionary,10.75663,2.2167,15,0.006669135,92.268,0.75873224
 ED,Consolidated Edison Inc.,CS,Utilities,9.82558,0.15303,15.28586,0.017372514,293.192,0.274931187
 IIJI,Internet Initiative Japan Inc,DR,Information Technology,10.56512,0.40247,22.30952,0.018474987,91.905,1.118202235
