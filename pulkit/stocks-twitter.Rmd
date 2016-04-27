@@ -1,3 +1,15 @@
+---
+title: "stocks-twitter"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r }
 library(dplyr)
 library(readr)
 library(lubridate)
@@ -120,7 +132,8 @@ fits <- df_stocktweetsperday %>%
 results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
 colnames(results)[6]<- 'pval'
 
-ggplot(results, aes(symbols, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+ggplot(results, aes(symbols, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') + 
+  geom_text_repel(aes(symbols, pval, label=symbols), data = filter(results,  pval <.05 )) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for volume~count model")
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
@@ -133,6 +146,7 @@ fits <- df_stocktweetsperday %>%
 results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
 colnames(results)[6]<- 'pval'
 ggplot(results, aes(symbols,pval, color=sector))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  geom_text_repel(aes(symbols, pval, label=symbols), data = filter(results,  pval <.05 )) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Closing Price~count model")
 
 # Let us see the list
@@ -148,51 +162,12 @@ colnames(results)[6]<- 'pval'
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
 ggplot(results, aes(symbols,pval, color=sector))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  geom_text_repel(aes(symbols, pval, label=symbols), data = filter(results,  pval <.05 )) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Price Change~count model")
-
-# Let us model absolute priceChange w.r.t count of tweets
-fits <- df_stocktweetsperday %>%
-  group_by(symbols) %>%
-  do(mod = lm(absPrcChange ~ count, data = .))
-
-results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
-colnames(results)[6]<- 'pval'
-ggplot(results, aes(symbols,pval, color=sector))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Abs. Price Change~count model")
-
 
 ######################### Below section is for sentiment analysis #######
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
-
-
-sandp <- suppressWarnings(sandp500())
-colnames(sandp) <- c("dt","open", "high","low", "close","volume","adj volume")
-
-sandp <- sandp  %>% mutate(prcChange = close - open)
-sandp$scaledClosePrice <- scale(sandp$close, center = TRUE, scale= TRUE)
-sandp$scaledVolume <- scale(sandp$volume, center = TRUE, scale= TRUE)
-sandp$scaledpriceChange <- scale(sandp$prcChange, center = TRUE, scale= TRUE)
-
-# Let us use lenear regression to find the relation between Closing price with # of tweets 
-dailytweetswithsp500 <- inner_join(df_tweetsperday, sandp) %>% select(dt,count,close,volume, prcChange, scaled, scaledClosePrice,scaledVolume,scaledpriceChange)
-
-# Close price with number of tweets
-lm(data =dailytweetswithsp500, close ~ scaled ) %>% tidy(conf.int = TRUE)
-# Volume with number of tweets
-lm(data =dailytweetswithsp500, volume ~ scaled ) %>% tidy(conf.int = TRUE)
-# PriceChange with number of tweets
-lm(data =dailytweetswithsp500, prcChange ~ scaled ) %>% tidy(conf.int = TRUE)
-
-# Let us use lenear regression to find the relation between Closing price with tweetsper sector 
-dailysectortweetswithsp500 <- inner_join(df_sectortweetsperday, sandp) %>% select(dt,count,close,volume, prcChange, scaled, scaledClosePrice,scaledVolume,scaledpriceChange)
-
-# Close price with number of tweets
-lm(data =dailysectortweetswithsp500, close ~ scaled ) %>% tidy(conf.int = TRUE)
-# Volume with number of tweets
-lm(data =dailysectortweetswithsp500, volume ~ scaled ) %>% tidy(conf.int = TRUE)
-# PriceChange with number of tweets
-lm(data =dailysectortweetswithsp500, prcChange ~ scaled ) %>% tidy(conf.int = TRUE)
 
 
 
@@ -224,7 +199,7 @@ score.sentiment <- function(sentences, pos.words, neg.words, .progress='none')
   return(scores.df)
 }
 # calculate the sentiment score
-scores <- score.sentiment(tweets$text, pos.words, neg.words, .progress='text')
+scores <- score.sentiment(tweets$text, pos.words, neg.words)
 stat <- scores
 # add the timestamp of the score
 stat$created <- tweets_tmp$date_timelb
@@ -240,5 +215,6 @@ ggplot(by.tweet, aes(created, number)) + geom_line(aes(group=tweet, color=tweet)
 
 hist(stat$score)
 
-
 View(scores)
+
+```
