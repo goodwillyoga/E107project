@@ -25,11 +25,11 @@ View(avg_sentiment_score)
 #Bar plot for high-volatility and low-volatility??
 data %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS")) %>%
   ggplot(aes(x = sentiment_score, fill=symbol, color=symbol)) +
-  geom_bar() 
+  geom_histogram() 
 
 avg_sentiment_score %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS")) %>%
   ggplot(aes(x = avg_score, fill=symbol, color=symbol)) +
-  geom_bar() 
+  geom_histogram() 
 
 
 load("/Users/poojasingh/Documents/HE107/E107project/pulkit/yahoo-finance.RData")
