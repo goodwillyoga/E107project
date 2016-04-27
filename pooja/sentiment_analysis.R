@@ -7,20 +7,37 @@ library(ggplot2)
 data <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/data/stock_twits_sentiment_score.csv")[-1]
 colnames(data)[3] <- "createdat"
 
-data <- data %>% mutate(utc.date = as.POSIXct(data$createdat, tz="UTC")) %>%
-                 mutate(est.date = format(utc.date, tz="EST"))
+#Convert to UTC to EST time zone 
+data <- data %>% mutate(utc.time = as.POSIXct(data$createdat, tz="UTC")) %>%
+                 mutate(est.time = format(utc.time, tz="EST")) %>%
+                 mutate(est.date = as.Date(est.time))
+
+#Average the sentiment score by day
+avg_sentiment_score <- data %>% group_by(symbol, est.date) %>%
+            mutate(avg_score = mean(sentiment_score)) %>%
+            select(symbol, est.date, avg_score) %>%
+            unique() %>% 
+            arrange(symbol, est.date)
+  
 View(data)
+View(avg_sentiment_score)
 
 #Bar plot for high-volatility and low-volatility??
 data %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS")) %>%
   ggplot(aes(x = sentiment_score, fill=symbol, color=symbol)) +
   geom_bar() 
 
+avg_sentiment_score %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS")) %>%
+  ggplot(aes(x = avg_score, fill=symbol, color=symbol)) +
+  geom_bar() 
+
 
 load("/Users/poojasingh/Documents/HE107/E107project/pulkit/yahoo-finance.RData")
 View(stocks)
+avg_stocks_price <- stocks %>% 
+                   group_by(symbol, day = lastTradeDate) %>%
+                   mutate(avg_price = mean(price)) %>%
+                   select(symbol, day, avg_price )
+View(avg_stocks_price)
 
-utc.date <- as.POSIXct(data$createdat, tz="UTC")
-head(utc.date)
-est.date <- format(utc.date, tz="EST")
-head(est.date)
+
