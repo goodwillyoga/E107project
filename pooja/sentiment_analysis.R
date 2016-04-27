@@ -45,3 +45,11 @@ head(avg_stocks_price$day)
 dat <- inner_join(avg_sentiment_score, avg_stocks_price)
 View(dat)
 
+#dat %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS")) %>%
+#  ggplot(aes(x = day, y=avg_score, size=avg_score, color=symbol)) + geom_point()
+
+dat %>% filter(symbol %in% c("AAPL", "EIX", "GS")) %>%
+  ggplot(aes(x = day, y=avg_price, size=avg_score, color=symbol, label=symbol)) + geom_point() +
+  labs(title="Daily Stock Price and Sentiment Score", x="Day of the week", y="Average Stock Price of the day")
+
+
