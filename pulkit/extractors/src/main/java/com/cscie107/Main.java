@@ -1,39 +1,22 @@
 package com.cscie107;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.text.StrBuilder;
-import yahoofinance.Stock;
-import yahoofinance.quotes.stock.StockQuote;
-
 import java.io.*;
-import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
-import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.net.URLDecoder;
 
 /**
  * Created by pulkit on 4/5/16.
  */
 public class Main {
     static SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy");
-    private static ScheduledExecutorService scheduler =
-            Executors.newScheduledThreadPool(1);
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        if(args.length != 4){
-            System.out.println("====USAGE====");
-            System.out.println("java -jar -Duser.timezone=America/New_York extractors-1.0-jar-with-dependencies.jar consumerKey consumerSecret token secret");
-        }
-        String stocksFileName = "stocks.csv";
         String tweetsFileName = "twitter.json";
         String[] monitoredStocks = MonitoredStocks.getStocks();
-        StockPriceExtractor spe = new StockPriceExtractor();
-        /*StockTweetExtractor ste = new StockTweetExtractor(args[0], args[1], args[2], args[3],monitoredStocks);
+        StockTweetExtractor ste = new StockTweetExtractor("p2x0SjCGtWUu6NQO9xDrJrfNR",
+                "V8b9SpJnHAuzzDTkaD5ty8k4qcR8jykyof4CpuNm05Aye375wk",
+                "17918415-3Fn11Si5hu2AL0SEfQPdMMYn5nPBGvPHOROBSIFkC",
+                "3Eyt1WMz6HGVRgHE8n6N0p7P0ghfSJ58RIsxXoGMWdfXu",monitoredStocks);
         ste.setup();
         BlockingQueue<String> messages = ste.getMessageQueue();
         Thread t1 = new Thread(new Runnable() {
@@ -66,29 +49,6 @@ public class Main {
                 }
             }
         });
-        t1.start();*/
-        scheduler.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                Map<String, Stock> stocks = spe.extractPrices(MonitoredStocks.getStocks());
-                writeLiveStockData(stocks, stocksFileName);
-            }
-        }, 0, 15, TimeUnit.MINUTES);
-
-    }
-
-    private static void writeLiveStockData(Map<String, Stock> stocks, String fileName) {
-        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName, true)))) {
-            for (Map.Entry<String, Stock> current : stocks.entrySet()) {
-                StockQuote quote = current.getValue().getQuote();
-                if (quote.getLastTradeTime() != null) {
-                    out.println(current.getKey() + "," + quote.getPrice() + "," + sdf.format(quote.getLastTradeTime().getTime()) + "," + quote.getLastTradeTime().getTime() + ","
-                            + quote.getDayHigh() + "," + quote.getDayLow() + "," + quote.getVolume() + "," + quote.getChangeFromYearHigh() + "," + quote.getChangeFromYearLow() + ","
-                            + quote.getOpen() + "," + quote.getChange() + "," + quote.getPreviousClose());
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Unable to write to file" + e.getMessage());
-        }
+        t1.start();
     }
 }
