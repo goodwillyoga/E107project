@@ -125,15 +125,5 @@ datz %>%
   ggplot(aes(x = dens, fill = lines)) + geom_density(alpha = 0.5) + 
   facet_wrap(~symbol)
 
-dat %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
-  ggplot(aes(x=pchange_avg_score)) + 
-  geom_histogram(aes(y=..density..), bins=20, colour="black", fill="white") + 
-  geom_density(alpha=0.2, fill="#FF6666") +
-  facet_wrap(~symbol)
 
-dat %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
-  ggplot(aes(x=pchange_price_change)) + 
-  geom_histogram(aes(y=..density..), bins=20, colour="black", fill="white") + 
-  geom_density(alpha=0.2, fill="#FF6666") +
-  facet_wrap(~symbol)
 
