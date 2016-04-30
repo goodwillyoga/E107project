@@ -18,5 +18,3 @@ for(i in 1:50000000){
   })
   Sys.sleep(15*60)
 }
-#tmp3 <- dailyStockData %>% select(symbol,lastTradeDate, daysHigh, daysLow, yearHigh, yearLow, open)
-#write_csv(tmp3,"/code/tot/Info/twitter-data/stocks-higlow-open-alldays.csv")
