@@ -74,56 +74,55 @@ avg_stocks_price_by_hour <- stocks %>%
 dat <- inner_join(avg_stocks_price_by_hour, avg_sentiment_score_by_hour)
 
 dat2 <- subset(dat, symbol=="AAPL")
-dat2 <- data.frame(dens = c(dat2$scale_pchange_price_change, dat2$scale_pchange_avg_score)
-                  , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat2$scale_pchange_price_change)))
+dat2 <- data.frame(Percent_Change_By_Hour = c(dat2$scale_pchange_price_change, dat2$scale_pchange_avg_score)
+                  , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat2$scale_pchange_price_change)))
 dat2 <- cbind(dat2, symbol="AAPL")
 
 dat3 <- subset(dat, symbol=="EIX")
-dat3 <- data.frame(dens = c(dat3$scale_pchange_price_change, dat3$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat3$scale_pchange_price_change)))
+dat3 <- data.frame(Percent_Change_By_Hour = c(dat3$scale_pchange_price_change, dat3$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat3$scale_pchange_price_change)))
 dat3 <- cbind(dat3, symbol="EIX")
 
 dat4 <- subset(dat, symbol=="GS")
-dat4 <- data.frame(dens = c(dat4$scale_pchange_price_change, dat4$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat4$scale_pchange_price_change)))
+dat4 <- data.frame(Percent_Change_By_Hour = c(dat4$scale_pchange_price_change, dat4$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat4$scale_pchange_price_change)))
 dat4 <- cbind(dat4, symbol="GS")
 
 dat5 <- subset(dat, symbol=="IBM")
-dat5 <- data.frame(dens = c(dat5$scale_pchange_price_change, dat5$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat5$scale_pchange_price_change)))
+dat5 <- data.frame(Percent_Change_By_Hour = c(dat5$scale_pchange_price_change, dat5$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat5$scale_pchange_price_change)))
 dat5 <- cbind(dat5, symbol="IBM")
 
 dat6 <- subset(dat, symbol=="YHOO")
-dat6 <- data.frame(dens = c(dat6$scale_pchange_price_change, dat6$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat6$scale_pchange_price_change)))
+dat6 <- data.frame(Percent_Change_By_Hour = c(dat6$scale_pchange_price_change, dat6$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat6$scale_pchange_price_change)))
 dat6 <- cbind(dat6, symbol="YHOO")
 
 dat7 <- subset(dat, symbol=="MSFT")
-dat7 <- data.frame(dens = c(dat7$scale_pchange_price_change, dat7$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat7$scale_pchange_price_change)))
+dat7 <- data.frame(Percent_Change_By_Hour = c(dat7$scale_pchange_price_change, dat7$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat7$scale_pchange_price_change)))
 dat7 <- cbind(dat7, symbol="MSFT")
 
 dat8 <- subset(dat, symbol=="TSLA")
-dat8 <- data.frame(dens = c(dat8$scale_pchange_price_change, dat8$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat8$scale_pchange_price_change)))
+dat8 <- data.frame(Percent_Change_By_Hour = c(dat8$scale_pchange_price_change, dat8$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat8$scale_pchange_price_change)))
 dat8 <- cbind(dat8, symbol="TSLA")
 
 dat9 <- subset(dat, symbol=="GOOG")
-dat9 <- data.frame(dens = c(dat9$scale_pchange_price_change, dat9$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat9$scale_pchange_price_change)))
+dat9 <- data.frame(Percent_Change_By_Hour = c(dat9$scale_pchange_price_change, dat9$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat9$scale_pchange_price_change)))
 dat9 <- cbind(dat9, symbol="GOOG")
 
 dat10 <- subset(dat, symbol=="FB")
-dat10 <- data.frame(dens = c(dat10$scale_pchange_price_change, dat10$scale_pchange_avg_score)
-                   , lines = rep(c("scaled percent price change", "scaled percent sentiment score"), each = length(dat10$scale_pchange_price_change)))
+dat10 <- data.frame(Percent_Change_By_Hour = c(dat10$scale_pchange_price_change, dat10$scale_pchange_avg_score)
+                   , lines = rep(c("scaled percent change in price", "scaled percent change in sentiment score"), each = length(dat10$scale_pchange_price_change)))
 dat10 <- cbind(dat10, symbol="FB")
 
 
 datz <- rbind(dat2, dat3, dat4, dat5, dat6, dat7, dat8, dat9, dat10)
 #Plot.
 datz %>% 
-  ggplot(aes(x = dens, fill = lines)) + geom_density(alpha = 0.5) + 
+  ggplot(aes(x = Percent_Change_By_Hour, fill = lines)) + geom_density(alpha = 0.5) + 
   facet_wrap(~symbol)
-
 
 
