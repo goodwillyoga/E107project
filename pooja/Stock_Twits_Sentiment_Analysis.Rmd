@@ -215,7 +215,12 @@ results1 <- tidy(fits1, mod) %>% filter(term=='avg_score')
 results1 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
   ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Hour") +
-  theme(legend.position="bottom")
+  theme(legend.position = "none") 
+
+results1 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Hour") +
+  theme(legend.position = "none") 
 
 #Fit linear models - percent change in avg_score + tweet_counts by hour
 fits2 <- dat %>%
@@ -228,7 +233,12 @@ results2 <- tidy(fits2, mod) %>% filter(term=='scale_pchange_tweet_counts')
 results2 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
   ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Hour") +
-  theme(legend.position="bottom")
+  theme(legend.position = "none") 
+
+results2 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Hour") +
+  theme(legend.position = "none")  
 
 #Fit linear models - avg_score + tweet_counts by day
 fits3 <- dat.byday %>%
@@ -241,7 +251,12 @@ results3 <- tidy(fits3, mod) %>% filter(term=='avg_score')
 results3 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
   ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Day") +
-  theme(legend.position="bottom")
+  theme(legend.position = "none") 
+
+results3 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Day") +
+  theme(legend.position = "none") 
 
 #Fit linear models by day - percent change in avg_score + tweet_counts by day
 fits4 <- dat.byday %>%
@@ -254,7 +269,12 @@ results4 <- tidy(fits4, mod) %>% filter(term=='scale_pchange_tweet_counts')
 results4 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
   ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Day") +
-  theme(legend.position="bottom")
+  theme(legend.position = "none") 
+
+results4 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Day") +
+  theme(legend.position = "none") 
 
 ```
 
