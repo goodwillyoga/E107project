@@ -64,6 +64,7 @@ tweets_est %>% group_by(dt) %>%
   summarise(count = n()) %>%
   ggplot(aes(dt, log(count))) + geom_point() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  theme(legend.position="bottom")+
   ggtitle('Distribution of Tweets per Day') + xlab('Dates')+ylab('Count(log scale) ')
 ```
 
@@ -76,6 +77,7 @@ dailyStockData %>% filter(symbol %in% selectively_analyzed_symbols) %>%
 dailyStockData %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot(aes(day, log(volume))) + geom_line(aes(color=symbol)) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  theme(legend.position="bottom")+
   ggtitle('Varition of Volume') + xlab('Dates')+ylab('Daily Volume ') + facet_wrap(~symbol,scales = "free")
 ```
 ```{r,echo=FALSE, message=FALSE}
@@ -83,6 +85,8 @@ dailyStockData %>% filter(symbol %in% selectively_analyzed_symbols) %>%
 tradingDays <- stocks_est %>% mutate(day = mdy(lastTradeDate)) %>% ungroup() %>% select(day) %>% distinct(day)
 ```
 We will start with modeling of daily stock/tweets data and try to do a linear regression to find relation between volume, closing Price and Daily Price Change with number of tweets. We will represent this once for all the shares and then selectively for 3 choosen stocks to see if we can find if this model 
+
+
 ```{r,echo=FALSE, message=FALSE}
 # Normalized tweets count data is stored in daily_tweet_score, Daily Stock data is present in dailyStockData, 
 #let us normalize the volume, closing price and Daily Price change and then join it daily_tweet_score
@@ -176,5 +180,101 @@ grid.arrange(arrangeGrob(p1+
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
                            theme(legend.position="none"), nrow=1), top = "Confidence Interval Plots")
+
+# Cleanup all the objects created in this block
+rm(p1, p2, p3, results_prcChange_count, results_price_count, results_volume_count,fits)
+
+```
+
+We can see that for GS we can have a successfull model of 
+
+
+```{r ,echo=FALSE, message=FALSE}
+# Let us try to model now based on the sentiment scores
+fits <- dailyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(volume ~ avgScore, data = .))
+
+results_volume <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_volume)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_volume, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~avgScore model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+# Let us model closing price vs count for each stock
+fits <- dailyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(price ~ avgScore, data = .))
+
+results_price <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_price)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_price, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Closing Price~avgScore model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+
+# Let us model Price Change vs count for all stocks
+fits <- dailyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(prcChange ~ avgScore, data = .))
+
+results_prcChange <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_prcChange)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_prcChange, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily Price Change~avgScore model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+# Let us plot specific for the 3 stocks 
+p1<- results_volume %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(symbol, pval, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~avgScore model")+ theme(legend.position="bottom")
+
+p2 <- results_price %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Closing Price~avgScore model")+ theme(legend.position="bottom")
+
+p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~avgScore model")+ theme(legend.position="bottom")
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
+
+# Let us plot the confidence intervals
+p1 <- results_volume %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 4) + ggtitle("volume~avgScore model")+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+p2 <-results_price %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 4) + ggtitle("Closing Price~avgScore model")+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+p3 <-results_prcChange %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 4) + ggtitle("Price Change~avgScore model")+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "Confidence Interval Plots")
+
+rm(p1, p2, p3, results_prcChange, results_price, results_volume,fits)
 
 ```
