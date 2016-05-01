@@ -16,14 +16,14 @@ sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consu
 selectively_analyzed_symbols <- c("GS","IBM","EIX")
 symbols_EDA <- c("AAPL","EIX","GS","IBM","YHOO","MSFT","TSLA","GOOG","FB")
 ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
-table(ticker_sector$sector)
 
 existingStocksDataLocation <- "/code/CSCIE-107/E107project/pulkit/yahoo-finance.RData"
 existingTweetsDataLocation <- "/code/CSCIE-107/E107project/pulkit/twitter.RData"
-null_value <- 0
+
 load(existingTweetsDataLocation)
 load(existingStocksDataLocation)
-
+# Change the column name to symbol
+colnames(symbols)[2] <- "symbol"
 #conver the date to proper format
 convert_24Time <- function(x){
   ret <- ''
@@ -61,13 +61,16 @@ nrow(stocks_est)
 stocks_est <- distinct(stocks_est)
 nrow(stocks_est)
 # Let us make a dataset of the dailyStock data 
-dailyStockData <- stocks_est %>% mutate(day = mdy(lastTradeDate)) %>% group_by(day,symbol) %>% filter(volume == max(volume)) 
+dailyStockData <- stocks_est %>% 
+  mutate(day = mdy(lastTradeDate)) %>% 
+  group_by(day,symbol) %>% 
+  filter(volume == max(volume)) 
 # We started collecting data from April 6th. Let us visualize the price at the end of each hour with the 
 # no of tweets for the stock with maximum number of stocks in each sector
 # create a dataset for hourly avg price of each stock.
 hourly_avg_stockPriceChng <- stocks_est %>% 
   mutate(day_hr = make_datetime(year = year(date_timelb), month = month(date_timelb), day = day(date_timelb), hour=hour(date_timelb))) %>% 
-  group_by(symbol,day_hr) %>% summarise(avgPrice = mean(price)) %>% 
+  group_by(symbol,day_hr) %>% summarise(avgPrice = mean(price)) %>%
   group_by(symbol) %>% arrange(day_hr) %>% 
   mutate(prcChange = pcchange(avgPrice)) %>% ungroup()
 
@@ -82,32 +85,35 @@ tweets_est <- mutate(tweets, date_timelb = as.POSIXct(as.numeric(time_stamp)/100
   mutate(day_hr = make_datetime(year = year(date_timelb), month = month(date_timelb), day = day(date_timelb), hour=hour(date_timelb)),dt = date(date_timelb)) %>%
   filter(dt %in% tradingDays$day) %>% 
   inner_join(symbols) %>% 
-  inner_join(ticker_sector, by=c("symbols"="symbol")) 
+  inner_join(ticker_sector) 
 
 # Let us see the distribuiton of tweets across each symbol on log scale
-tweets_est %>% group_by(symbols) %>% 
-  summarise(count = n()) %>% 
-  ggplot(aes(symbols, log(count))) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+tweets_est %>% group_by(symbol) %>% 
+  summarise(count = n()) %>% inner_join(ticker_sector) %>%
+  ggplot(aes(symbol, log(count), color=sector)) + geom_point() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  ggtitle('Distribution of tweets') + xlab('Symbols')+ylab('Count(log scale) ')
 
 # Let us see the distribution of tweets across each day 
-tweets_est %>% group_by(dt) %>% 
+tweets_est %>% mutate(dt = mday(dt)) %>% group_by(dt) %>% 
   summarise(count = n()) %>% 
-  ggplot(aes(dt, log(count))) + geom_point() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  ggplot(aes(dt, log(count))) + geom_point() +
+  ggtitle('# of Tweets per day For April') + xlab('Date')+ylab('Count(log scale) ')
 
-# Let us calculate %age change in number of tweets per symbol over the entire date range
-hourly_tweetsCount_changePer <- tweets_est %>% group_by(symbols,day_hr) %>% 
+# Let us calculate %age change in number of tweets grouped per hour for every symbol over the entire date range
+hourly_tweetsCount_changePer <- tweets_est %>% group_by(symbol,day_hr) %>% 
   summarise(count = n()) %>%
-  group_by(symbols) %>% arrange(day_hr) %>%
+  group_by(symbol) %>% arrange(day_hr) %>%
   mutate(prcCountChange = pcchange(count)) %>% ungroup()
 
-# Let us plot the price change with tweets count change for the stocks with maximum number of tweets in each sector
+# Let us plot the price change with tweets count change for a few stocks
 
-inner_join(hourly_tweetsCount_changePer,hourly_avg_stockPriceChng, by=c("symbols" = "symbol", "day_hr" = "day_hr")) %>% 
-  filter(symbols %in% symbols_EDA) %>% 
+filter(hourly_tweetsCount_changePer , symbol %in% symbols_EDA) %>% 
+  inner_join(hourly_avg_stockPriceChng) %>% 
   ggplot()+
   geom_point(aes(day_hr,log(prcChange),color='%age Price Change')) + 
   geom_point(aes(day_hr,log(prcCountChange), color='%age TweetCount Change')) +
-  facet_wrap(~symbols,scales = "free") + ggtitle(" Change in %ages of Tweets and Price") +
+  facet_wrap(~symbol,scales = "free") + ggtitle(" Change in %ages of Tweets and Price") +
   xlab('%age change') + ylab('date')
 
 # From the above we can see that there are some points where the higher price variation also has higher number of tweets.
@@ -115,68 +121,72 @@ inner_join(hourly_tweetsCount_changePer,hourly_avg_stockPriceChng, by=c("symbols
 ####################### Modelling related code #############################
 # Let us model number of tweets per day for the selected stocks with closing price, volume of stocks and price change.
 # We will be standardizing all the elements 
-selective_tweets_est <- filter(tweets_est, symbols %in% selectively_analyzed_symbols)
-df_stocktweetsperday <-  selective_tweets_est %>% group_by(symbols,dt) %>% summarize(count = n()) 
-df_stocktweetsperday <- df_stocktweetsperday %>% group_by(symbols) %>% mutate_each(funs(normalize), count) 
+selective_tweets_est <- filter(tweets_est, symbol %in% selectively_analyzed_symbols)
+df_stocktweetsperday <-  selective_tweets_est %>% 
+  group_by(symbol,dt) %>% summarize(count = n()) %>% ungroup() %>% 
+  group_by(symbol) %>% mutate_each(funs(normalize), count) 
 
 # Standardize the volume for each of the choosen currency pairs
 dailyStockData <- filter(dailyStockData, symbol %in% selectively_analyzed_symbols)  %>% 
   group_by(symbol) %>% mutate_each(funs(normalize), volume) 
-# Let us plot the standardized result
-hist(df_stocktweetsperday$count)
+
 # Let us join this with dailyStockData dataset
 
-df_stocktweetsperday <- inner_join(df_stocktweetsperday,dailyStockData, by=c("symbols"="symbol","dt"="day")) %>% 
-  select(symbols, dt, count,price,volume, open, sector) %>%
+df_stocktweetsperday <- inner_join(df_stocktweetsperday,dailyStockData, by=c("symbol"="symbol","dt"="day")) %>% 
+  select(symbol, dt, count,price,volume, open, sector) %>%
   mutate(prcChange = open - price) %>% mutate(absPrcChange = abs(prcChange))  # price is the closing price so we calculate the closing price for the day
 
 fits <- df_stocktweetsperday %>%
-  group_by(symbols) %>%
+  group_by(symbol) %>%
   do(mod = lm(volume ~ count, data = .))
 
-results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% 
-  inner_join(ticker_sector, by=c("symbols"="symbol"))
+results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count')
 colnames(results)[6]<- 'pval'
 
-ggplot(results, aes(symbols, pval, color=symbols)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for volume~count model")
+p1<- ggplot(results, aes(symbol, pval, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~count model")
+
+results %>% select(symbol,pval,`conf.low`, `conf.high`)
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
 
 # Let us model closing price w.r.t count of tweets
 fits <- df_stocktweetsperday %>%
-  group_by(symbols) %>%
+  group_by(symbol) %>%
   do(mod = lm(price ~ count, data = .))
 
-results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
+results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') 
 colnames(results)[6]<- 'pval'
-ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Closing Price~count model")
-
+p2 <- ggplot(results, aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Closing Price~count model")
+results %>% select(symbol,pval,`conf.low`, `conf.high`)
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
 
 # Let us model priceChange w.r.t count of tweets
 fits <- df_stocktweetsperday %>%
-  group_by(symbols) %>%
+  group_by(symbol) %>%
   do(mod = lm(prcChange ~ count, data = .))
 
-results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
+results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') 
 colnames(results)[6]<- 'pval'
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
-ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Price Change~count model")
+p3<- ggplot(results, aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~count model")
+results %>% select(symbol,pval,`conf.low`, `conf.high`)
+
+grid.arrange(p1, p2, p3, nrow=1, top = "P-Value for standardized")
 
 # Let us model absolute priceChange w.r.t count of tweets
-fits <- df_stocktweetsperday %>%
-  group_by(symbols) %>%
-  do(mod = lm(absPrcChange ~ count, data = .))
+#fits <- df_stocktweetsperday %>%
+ # group_by(symbol) %>%
+#  do(mod = lm(absPrcChange ~ count, data = .))
 
-results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
-colnames(results)[6]<- 'pval'
-ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Abs. Price Change~count model")
+#results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector, by=c("symbols"="symbol"))
+#colnames(results)[6]<- 'pval'
+#ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Abs. Price Change~count model")
 
 
 ######################### Below section is for sentiment analysis #######
@@ -216,72 +226,69 @@ stat$id_str <- selective_tweets_est$id_str
 stat <- mutate(stat, tweet=ifelse(stat$score > 0, 'positive', ifelse(stat$score < 0, 'negative', 'neutral')))
 by.tweet <- group_by(stat, tweet, created) %>% summarise( number=n())
 
-ggplot(by.tweet, aes(created, number)) + geom_line(aes(group=tweet, color=tweet), size=2) +
-  geom_point(aes(group=tweet, color=tweet), size=4) +
-  theme(text = element_text(size=18), axis.text.x = element_text(angle=90, vjust=1)) 
-
+# Let us see the histogram of scores
 hist(stat$score)
 
-# Let us group the sentiment score hourly basis and then standardize them
-stat_symbol <- inner_join(stat,symbols) %>% filter(symbols %in% selectively_analyzed_symbols)
+# Let us group the sentiment score on hourly basis and then standardize them
+stat_symbol <- filter(symbols,symbol %in% selectively_analyzed_symbols) %>% inner_join(stat)
 normalized_scores<- stat_symbol %>% 
   mutate(day = as_date(created)) %>% 
-  group_by(symbols,day) %>% summarise(avgScore = mean(score)) %>% group_by(symbols) %>% 
+  group_by(symbol,day) %>% summarise(avgScore = mean(score)) %>% group_by(symbol) %>% 
   mutate_each(funs(normalize), avgScore)
-View(stat)
+
 hist(normalized_scores$avgScore)
 
 ######## Plot with sentiment score
-normalized_scores <- inner_join(normalized_scores,dailyStockData, by=c("symbols"="symbol","day"="day")) %>% 
-  select(symbols, day, avgScore,price,volume, open, sector) %>%
+normalized_scores <- inner_join(normalized_scores,dailyStockData) %>% 
+  select(symbol, day, avgScore,price,volume, open, sector) %>%
   mutate(prcChange = open - price) %>% mutate(absPrcChange = abs(prcChange)) %>% ungroup() # price is the closing price so we calculate the closing price for the day
 
 fits <- normalized_scores %>%
-  group_by(symbols) %>%
+  group_by(symbol) %>%
   do(mod = lm(volume ~ avgScore, data = .))
 
 results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore')
 colnames(results)[6]<- 'pval'
 
-ggplot(results, aes(symbols, pval, color=symbols)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+p1 <- ggplot(results, aes(symbol, pval, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for volume~Score model")
-# Let us see the list
-#results[with(results, order(pval)), ] %>% print(n=70)
+results %>% select(symbol,pval,`conf.low`, `conf.high`)
 
 # Let us model closing price w.r.t count of tweets
 fits <- normalized_scores %>%
-  group_by(symbols) %>%
+  group_by(symbol) %>%
   do(mod = lm(price ~ avgScore, data = .))
 
 results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') 
 colnames(results)[6]<- 'pval'
-ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+p2<- ggplot(results, aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Closing Price~Score model")
-
+results %>% select(symbol,pval,`conf.low`, `conf.high`)
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
 
 # Let us model priceChange w.r.t count of tweets
 fits <- normalized_scores %>%
-  group_by(symbols) %>%
+  group_by(symbol) %>%
   do(mod = lm(prcChange ~ avgScore, data = .))
 
 results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') 
 colnames(results)[6]<- 'pval'
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
-ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+p3<- ggplot(results, aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Price Change~Score model")
 
+grid.arrange(p1, p2, p3, nrow=1, top = "P-Value for standardized")
 # Let us model absolute priceChange w.r.t count of tweets
-fits <- normalized_scores %>%
-  group_by(symbols) %>%
-  do(mod = lm(absPrcChange ~ avgScore, data = .))
+#fits <- normalized_scores %>%
+#  group_by(symbols) %>%
+#  do(mod = lm(absPrcChange ~ avgScore, data = .))
 
-results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') 
-colnames(results)[6]<- 'pval'
-ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Abs. Price Change~Score model")
+#results <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') 
+#colnames(results)[6]<- 'pval'
+#ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("P-values for Abs. Price Change~Score model")
 
 
 
@@ -291,23 +298,23 @@ ggplot(results, aes(symbols,pval, color=symbols))+geom_point()+geom_hline(yinter
 hourlynormalized_scores<- stat_symbol %>% 
   mutate(day_ms = ymd_hms(created)) %>% 
   mutate(day_hr = make_datetime(year = year(day_ms), month = month(day_ms), day = day(day_ms), hour=hour(day_ms))) %>%
-  group_by(symbols,day_hr) %>% summarise(avgScore = mean(score)) %>% group_by(symbols) %>% 
+  group_by(symbol,day_hr) %>% summarise(avgScore = mean(score)) %>% group_by(symbol) %>% 
   mutate_each(funs(normalize), avgScore) %>% ungroup()
 
 hourly_avg_stockPriceChng <- hourly_avg_stockPriceChng %>% 
   group_by(symbol) %>% mutate_each(funs(normalize), avgPrice) %>% ungroup()
 
-hourly_stocks_score <- inner_join(hourlynormalized_scores,hourly_avg_stockPriceChng, by=c("symbols"="symbol", "day_hr"="day_hr"))
+hourly_stocks_score <- inner_join(hourlynormalized_scores,hourly_avg_stockPriceChng)
 
 hourly_stocks_score %>% mutate(week = isoweek(day_hr)) %>% 
   ggplot()+geom_line(aes(day_hr,avgScore, color="Sentiment Score"))+
-  geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbols+week,scales = "free") + 
+  geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol+week,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #### Cross co-rrelation of sentiment score and stock prices
 for(stockSymbol in selectively_analyzed_symbols){
-  stockHourlyData <- hourly_stocks_score %>% filter(symbols == stockSymbol)
-  tweetsHourlyScore <- hourlynormalized_scores %>% filter(symbols == stockSymbol)
+  stockHourlyData <- hourly_stocks_score %>% filter(symbol == stockSymbol)
+  tweetsHourlyScore <- hourlynormalized_scores %>% filter(symbol == stockSymbol)
   ccf(tweetsHourlyScore$avgScore,stockHourlyData$avgPrice)
 }
 ccf(hourlynormalized_scores$avgScore,hourly_stocks_score$avgPrice, ylab = "cross-correlation")
