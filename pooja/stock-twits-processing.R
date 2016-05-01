@@ -93,11 +93,11 @@ sentiment_scores <- lapply(1:dat.length, function(i){
           
           #Bag of positive words for inforgraphics later
           posTerms <- e$posTerms[match(words, e$posTerms)]
-          e$posWords <- posTerms[!is.na(posTerms)]
+          posTerms <- posTerms[!is.na(posTerms)]
 
           #Bag of negative words for inforgraphics later
           negTerms <- e$negTerms[match(words, e$negTerms)]
-          e$negWords <- negTerms[!is.na(negTerms)]
+          negTerms <- negTerms[!is.na(negTerms)]
 
           #build vector with matches between sentence and each category
           vPosMatches <- length(e$posWords) 
@@ -105,21 +105,16 @@ sentiment_scores <- lapply(1:dat.length, function(i){
           
           score <- vPosMatches - vNegMatches
           e$dat3 <- rbind(e$dat3,cbind(e$dat2[i,], "sentiment_score" = score))
+          e$posWords <- rbind(e$posWords, posTerms)
+          e$negWords <- rbind(e$negWords, negTerms)
           #paste("i ", i, "score " , score)
-          
-          write.csv(e$dat3, "/Users/poojasingh/stock_twits_sentiment_score_n1.csv", append=TRUE)
-          write.csv(e$posWords, "/Users/poojasingh/posWords_n1.csv", append=TRUE)
-          write.csv(e$negWords, "/Users/poojasingh/negWords_n1.csv", append=TRUE)
-          
-          #For next iteration
-          e$dat3 <- c()
-          e$posWords <- c()
-          e$negWords <- c()
 })
 paste("End calculating sentiment score...")
 Sys.time()
 
-head(e$dat3)
+write.csv(e$dat3, "/Users/poojasingh/stock_twits_sentiment_score_n1.csv")
+write.csv(e$posWords, "/Users/poojasingh/posWords_n1.csv")
+write.csv(e$negWords, "/Users/poojasingh/negWords_n1.csv")
 
 hist(e$dat3$sentiment_score)
 
