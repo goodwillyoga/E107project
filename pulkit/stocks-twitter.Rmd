@@ -125,6 +125,11 @@ df_stocktweetsperday <- inner_join(df_stocktweetsperday,dailyStockData, by=c("sy
   select(symbols, dt, count,price,volume, open, sector) %>%
   mutate(prcChange = open - price) %>% mutate(absPrcChange = abs(prcChange))  # price is the closing price so we calculate the closing price for the day
 
+# Let us normailze volume,closingPrice and priceChange for this duration
+df_stocktweetsperday <- df_stocktweetsperday %>% group_by(symbols) %>% mutate_each(funs(normalit), volume) %>% mutate_each(funs(normalit), prcChange) %>% mutate_each(funs(normalit), price) %>% ungroup() 
+
+hist(df_stocktweetsperday$prcChange)
+
 fits <- df_stocktweetsperday %>%
   group_by(symbols) %>%
   do(mod = lm(volume ~ count, data = .))
@@ -152,6 +157,7 @@ ggplot(results, aes(symbols,pval, color=sector))+geom_point()+geom_hline(yinterc
 # Let us see the list
 #results[with(results, order(pval)), ] %>% print(n=70)
 
+##### Fix this one XIV 2016-04-12 #####
 # Let us model priceChange w.r.t count of tweets
 fits <- df_stocktweetsperday %>%
   group_by(symbols) %>%
