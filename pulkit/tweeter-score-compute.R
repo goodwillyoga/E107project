@@ -87,6 +87,12 @@ daily_tweet_score <- scores %>%
   group_by(symbol,day) %>% summarise(avgScore = mean(score)) %>% group_by(symbol) %>% 
   mutate_each(funs(normalize), avgScore) %>% ungroup()
 
+# Let us add the normalized daily volume for each stock to the daily_tweet_score dataset
+
+daily_tweet_score<- tweets_est %>% 
+  group_by(symbol,dt) %>% summarize(count = n()) %>% ungroup() %>% 
+  group_by(symbol) %>% mutate_each(funs(normalize), count) %>% inner_join(daily_tweet_score, by=c("symbol"="symbol", "dt"="day"))
+
 # Now making a dataset for hourly tweet score 
 hourly_tweet_score <- scores %>%
   mutate(day_ms = ymd_hms(created)) %>% 
