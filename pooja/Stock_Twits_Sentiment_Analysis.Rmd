@@ -72,7 +72,7 @@ scale<-function(m){
   (m - mean(m))/sd(m)
 }
 
-#Average sentiment score by day
+#Average sentiment score by hour
 avg_sentiment_score_by_hour <- data %>% 
             group_by(symbol, dayhour = est.hour) %>%
             summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
@@ -85,14 +85,30 @@ avg_sentiment_score_by_hour <- data %>%
             mutate(scale_pchange_tweet_counts = scale(pchange_tweet_counts)) %>% 
             mutate(scale_pchange_avg_score = ifelse(is.na(scale_pchange_avg_score) | is.infinite(scale_pchange_avg_score) |is.nan(scale_pchange_avg_score), 0, scale_pchange_avg_score)) %>%
             ungroup() %>%
-            select(symbol, dayhour, avg_score, pchange_tweet_counts, pchange_avg_score, scale_pchange_avg_score, scale_pchange_tweet_counts) %>%
+            select(symbol, dayhour, avg_score, tweet_counts, pchange_tweet_counts, pchange_avg_score, scale_pchange_avg_score, scale_pchange_tweet_counts) %>%
+            unique() 
+
+#Average sentiment score by day
+avg_sentiment_score_by_day <- data %>% 
+            group_by(symbol, day=est.date) %>%
+            summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
+            mutate(pchange_tweet_counts = pcchange(tweet_counts)) %>%
+            mutate(pchange_avg_score = pcchange(avg_score)) %>%
+            mutate(pchange_avg_score = ifelse(is.na(pchange_avg_score) | is.infinite(pchange_avg_score) |is.nan(pchange_avg_score), 0, pchange_avg_score)) %>%
+            ungroup() %>%
+            group_by(symbol) %>%
+            mutate(scale_pchange_avg_score = scale(pchange_avg_score)) %>% 
+            mutate(scale_pchange_tweet_counts = scale(pchange_tweet_counts)) %>% 
+            mutate(scale_pchange_avg_score = ifelse(is.na(scale_pchange_avg_score) | is.infinite(scale_pchange_avg_score) |is.nan(scale_pchange_avg_score), 0, scale_pchange_avg_score)) %>%
+            ungroup() %>%
+            select(symbol, day, avg_score, tweet_counts, pchange_tweet_counts, pchange_avg_score, scale_pchange_avg_score, scale_pchange_tweet_counts) %>%
             unique() 
  
 
 #Load YAHOO finance data
 load("/Users/poojasingh/Documents/HE107/E107project/pulkit/yahoo-finance.RData")
-#View(stocks)
 
+##Average Stock Price by hour
 avg_stocks_price_by_hour <- stocks %>% 
                    mutate(dayhour = paste(lastTradeDate,get_24hour(lastTradeTime))) %>%
                    group_by(symbol, dayhour) %>%
@@ -107,9 +123,23 @@ avg_stocks_price_by_hour <- stocks %>%
                    select(symbol, dayhour, price, pchange_price_change, scale_pchange_price_change) %>%
                    unique()
 
+#Average Stock Price by day
+avg_stocks_price_by_day <- stocks %>% 
+                  group_by(symbol, day=lastTradeDate) %>%
+                  summarise(price = mean(price)) %>%
+                  mutate(pchange_price_change = pcchange(price)) %>%
+                  mutate(pchange_price_change = ifelse(is.na(pchange_price_change) | is.infinite(pchange_price_change) |is.nan(pchange_price_change), 0, pchange_price_change)) %>%
+                  ungroup() %>%
+                  group_by(symbol) %>%
+                  mutate(scale_pchange_price_change = scale(pchange_price_change)) %>% 
+                  mutate(scale_pchange_price_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
+                  ungroup() %>%
+                  select(symbol, day, price, pchange_price_change, scale_pchange_price_change) %>%
+                  unique()
+
 #Join score and price
 dat <- inner_join(avg_stocks_price_by_hour, avg_sentiment_score_by_hour)
-#names(dat)
+dat.byday <- inner_join(avg_stocks_price_by_day, avg_sentiment_score_by_day)
 
 #Plot overlay denisty plots for perchange change in stock price and percent change in sentiment_score
 dat2 <- subset(dat, symbol=="AAPL")
@@ -174,16 +204,57 @@ datz %>%
 #### Plot p-values for linear regression fit model
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Fit linear models
-fits <- dat %>%
+#Fit linear models - avg_score + tweet_counts by hour
+fits1 <- dat %>%
+  group_by(symbol) %>%
+  do(mod = lm(price ~ avg_score + tweet_counts, data = .))
+
+results1 <- tidy(fits1, mod) %>% filter(term=='avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results1 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Hour") +
+  theme(legend.position="bottom")
+
+#Fit linear models - percent change in avg_score + tweet_counts by hour
+fits2 <- dat %>%
   group_by(symbol) %>%
   do(mod = lm(scale_pchange_price_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
 
-results <- tidy(fits, mod) %>% filter(term=='scale_pchange_tweet_counts') 
+results2 <- tidy(fits2, mod) %>% filter(term=='scale_pchange_tweet_counts') 
 
 #Plot p-values and see symbols that have significant results
-results %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
+results2 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
   ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price ~ Sentiment Score Model")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Hour") +
+  theme(legend.position="bottom")
+
+#Fit linear models - avg_score + tweet_counts by day
+fits3 <- dat.byday %>%
+  group_by(symbol) %>%
+  do(mod = lm(price ~ avg_score + tweet_counts, data = .))
+
+results3 <- tidy(fits3, mod) %>% filter(term=='avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results3 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Day") +
+  theme(legend.position="bottom")
+
+#Fit linear models by day - percent change in avg_score + tweet_counts by day
+fits4 <- dat.byday %>%
+  group_by(symbol) %>%
+  do(mod = lm(scale_pchange_price_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
+
+results4 <- tidy(fits4, mod) %>% filter(term=='scale_pchange_tweet_counts') 
+
+#Plot p-values and see symbols that have significant results
+results4 %>% filter(symbol %in% c("AAPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIX", "GS", "IBM")) %>%
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Day") +
+  theme(legend.position="bottom")
+
 ```
 
