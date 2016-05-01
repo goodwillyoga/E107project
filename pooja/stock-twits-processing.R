@@ -112,6 +112,7 @@ sentiment_scores <- lapply(1:dat.length, function(i){
           write.csv(e$negWords, "/Users/poojasingh/negWords_n1.csv", append=TRUE)
           
           #For next iteration
+          e$dat3 <- c()
           e$posWords <- c()
           e$negWords <- c()
 })
