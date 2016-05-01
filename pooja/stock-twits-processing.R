@@ -84,7 +84,6 @@ sentiment_scores <- lapply(1:dat.length, function(i){
  
           #remove unnecessary characters and split up by word 
           sentence <- e$dat$message[i] 
-          sentence
           sentence <- gsub('[[:punct:]]', '', sentence)
           sentence <- gsub('[[:cntrl:]]', '', sentence)
           sentence <- gsub('\\d+', '', sentence)
@@ -93,33 +92,33 @@ sentiment_scores <- lapply(1:dat.length, function(i){
           words <- unlist(wordList)
           
           #Bag of positive words for inforgraphics later
-          posTerms <- as.data.frame(e$posTerms[match(words, e$posTerms)]) %>% filter(!is.na(.))
-          posTerms <- as.character(posTerms[1,])
-          e$posWords <- c(e$posWords, posTerms)
-          
+          posTerms <- e$posTerms[match(words, e$posTerms)]
+          e$posWords <- posTerms[!is.na(posTerms)]
+
           #Bag of negative words for inforgraphics later
-          negTerms <- as.data.frame(e$negTerms[match(words, e$negTerms)]) %>% filter(!is.na(.))
-          negTerms <- as.character(negTerms[1,])
-          e$negWords <- c(e$negWords, negTerms)
-          
+          negTerms <- e$negTerms[match(words, e$negTerms)]
+          e$negWords <- negTerms[!is.na(negTerms)]
+
           #build vector with matches between sentence and each category
-          vPosMatches <- sum(!is.na(match(words, e$posTerms)) > 0)
-          vNegMatches <- sum(!is.na(match(words, e$negTerms)) > 0)
-          vPosMatches
-          vNegMatches
+          vPosMatches <- length(e$posWords) 
+          vNegMatches <- length(e$negWords) 
+          
           score <- vPosMatches - vNegMatches
-          score
           e$dat3 <- rbind(e$dat3,cbind(e$dat2[i,], "sentiment_score" = score))
           #paste("i ", i, "score " , score)
+          
+          write.csv(e$dat3, "/Users/poojasingh/stock_twits_sentiment_score_n1.csv", append=TRUE)
+          write.csv(e$posWords, "/Users/poojasingh/posWords_n1.csv", append=TRUE)
+          write.csv(e$negWords, "/Users/poojasingh/negWords_n1.csv", append=TRUE)
+          
+          #For next iteration
+          e$posWords <- c()
+          e$negWords <- c()
 })
 paste("End calculating sentiment score...")
 Sys.time()
 
 head(e$dat3)
-
-write.csv(e$dat3, "/Users/poojasingh/stock_twits_sentiment_score_n1.csv")
-write.csv(table(e$posWords), "/Users/poojasingh/posWords_n1.csv")
-write.csv(table(e$negWords), "/Users/poojasingh/negWords_n1.csv")
 
 hist(e$dat3$sentiment_score)
 
@@ -130,3 +129,5 @@ e$dat3 %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "E
 e$dat3 %>%
   ggplot(aes(symbol,sentiment_score, fill=symbol, color=symbol)) + geom_point()
 str(e$dat3)
+
+
