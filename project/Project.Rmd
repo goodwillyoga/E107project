@@ -350,6 +350,20 @@ $$R_s = R_f + R_b*β$$ where β = Beta and Rf = intercept showing the stock retu
 4. Fitting the regression coefficients, we get the equation - 
 $$R_s = 17.16 - 5.48*β$$ where β<=4.5
 
+### Trend estimation using smoothing
+R-squared value for the fit came at only 3.8% which is rather a poor fit. Instead of blindly interpretting the regression results, we would now attempt to use smoothing to see if a different trend can explain the relationship better.
+
+```{r, warning=FALSE, echo=FALSE}
+financial_data %>%
+  filter(Annualized_Return_5Year<80) %>%
+  ggplot(aes_string(x="Beta_5Year", y="Annualized_Return_5Year")) + 
+  geom_point() +
+  geom_smooth(span=0.25, color="red") +
+  ggtitle("Beta vs Annualized_Returns for ALL stocks (Smoothing)")
+```
+
+The above plot clearly shows that returns are actually trending upwards as the beta increases upto certain threshold. This trend appears to be true with in the universe of low beta stocks (< 0.8). After that threshold, returns actually goes lower with much higher beta values. 
+
 ### Regression between low beta stocks and returns
 Low beta stocks are less volatile and their returns are expected to be more predictable when compared to the benchmark (S&P500) returns. We would like to now see if above relationship of lower returns with increasing beta holds good within the universe of low beta stocks. Basically, we will repeat above analysis for stocks having beta within the 1st quartile. As done before, we will exclude outlier stocks with returns in excess of 80%.
 
@@ -392,7 +406,7 @@ financial_data_filtered %>%
 
 ```
 
-The results are indeed interesting. The returns within the universe of low beta stocks are actually better with increasing beta. The slope of the best fit regression line came as 6.44 which means that for every 0.1 unit increase in beta (range: 0.0 to 0.8), the total return of the stock would actually increase by about 0.64% on an annualised basis. This appears intuitive with expectations of higher returns with higher risk (beta) stocks and unlike what we noticed with the universe of stocks above. 
+The results appears more interesting and are in agreeement with the smoother trend we have seen earlier. The returns within the universe of low beta stocks are actually better with increasing beta. The slope of the best fit regression line came as 6.44 which means that for every 0.1 unit increase in beta (range: 0.0 to 0.8), the total return of the stock would actually increase by about 0.64% on an annualised basis. This appears intuitive with expectations of higher returns with higher risk (beta) stocks, but however this trend of higher returns doesn't hold good with much higher beta stocks actually returning lower returns over time. This tells us there is a threshold with beta values after which higher risk actually translates lower returns.
 
 Fitting the regression coefficients, we get the equation - 
 $$R_s = 9.83 + 6.44*β$$  where β <= 0.8
@@ -456,4 +470,9 @@ returns_results %>% kable
 ```
 
 From above results, it appears very well that Monte Carlo simulation is in agreement with the regression results above. On an average, the mean returns of low beta stocks is much higher when compared to very high beta stocks.
+
+
+# Conclusion 
+The detailed statistical analysis is an attempt to present the Beta as a measure of stock volatility (or risk). The exploratory data analysis of "beta" is shown to be normal and further the case study of 3 very distinct stocks demonstrates that the volatility of a stock can be explained to some extent using the volatility of the benchmark index (S&P500). The next study of beta using an universe of 2500+ stocks demonstrates that there is a trend between beta and the stock returns. The returns within the universe of low beta stocks are actually better with increasing beta (< 0.8). however, this trend doesn't hold good with stocks having much higher beta (> 1.0) where returns actually trend lower with increasing beta. This was also confirmed with the Monte Carlo simulation performed by comparing the returns of low-beta stocks against the high-beta ones.
+### <TODO> twitter sentiment conclusion
 
