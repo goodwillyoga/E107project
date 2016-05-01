@@ -187,14 +187,25 @@ dat10 <- data.frame(Normalized_Percent_Change_By_Hour = c(dat10$scale_pchange_pr
                    , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat10$scale_pchange_price_change)))
 dat10 <- cbind(dat10, symbol="FB")
 
-
-datz <- rbind(dat2, dat3, dat4, dat5, dat6, dat7, dat8, dat9, dat10)
 ```
 
 #### Density plot of normalized hourly percent change in sentiment score and price change 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Overlay Density Plot
+datz <- rbind(dat3, dat4, dat5)
+datz %>% 
+  ggplot(aes(x = Normalized_Percent_Change_By_Hour, fill = lines)) + geom_density(alpha = 0.5) + 
+  facet_wrap(~symbol) +
+  theme(legend.position="bottom")
+
+datz <- rbind(dat2, dat6, dat7)
+datz %>% 
+  ggplot(aes(x = Normalized_Percent_Change_By_Hour, fill = lines)) + geom_density(alpha = 0.5) + 
+  facet_wrap(~symbol) +
+  theme(legend.position="bottom")
+
+datz <- rbind(dat8, dat9, dat10)
 datz %>% 
   ggplot(aes(x = Normalized_Percent_Change_By_Hour, fill = lines)) + geom_density(alpha = 0.5) + 
   facet_wrap(~symbol) +
