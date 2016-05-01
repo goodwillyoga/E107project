@@ -251,3 +251,20 @@ results4 %>%
 
 ```
 
+#### Placeholder for Words Infographics
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+words <- cbind(c('up','rise','hike'), c(10, 4, 2), c('positive', 'positive', 'positive'))
+colnames(words) <- c('words','counts', 'label')
+words <- rbind(words,cbind(c('fail','down','discredit'), c(1, 9, 5), c('negative', 'negative', 'negative')))
+words <- as.data.frame(words)
+library(ggplot2)
+library(ggrepel)
+ggplot(data=words, aes(x=words,y=counts, size=counts, color=as.factor(label))) + 
+  geom_point() +
+  geom_text_repel(aes(words, counts, label=words)) + 
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_blank()) +
+  labs(title="Words Inforgraphics", y="Counts", x="Positive or Negative Sentiment Words")
+
+```
