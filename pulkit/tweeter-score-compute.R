@@ -97,3 +97,4 @@ hourly_tweet_score <- scores %>%
 
 # Let us store the 4 datasets into a .rdata file 
 save(tweets_est, scores, daily_tweet_score,hourly_tweet_score,  file = "/code/CSCIE-107/E107project/pulkit/processed-tweets.RData")
+
