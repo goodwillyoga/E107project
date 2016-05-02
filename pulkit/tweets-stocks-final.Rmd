@@ -159,21 +159,21 @@ p1 <- results_volume_count %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 4) + ggtitle("volume~count model")+
+  geom_point(size = 2) + ggtitle("volume~count model")+
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p2 <-results_price_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 4) + ggtitle("Closing Price~count model")+
+  geom_point(size = 2) + ggtitle("Closing Price~count model")+
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p3 <-results_prcChange_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 4) + ggtitle("Price Change~count model")+
+  geom_point(size = 2) + ggtitle("Price Change~count model")+
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 grid.arrange(arrangeGrob(p1+ 
@@ -253,21 +253,21 @@ p1 <- results_volume %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 4) + ggtitle("volume~avgScore model")+
+  geom_point(size = 2) + ggtitle("volume~avgScore model")+
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p2 <-results_price %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 4) + ggtitle("Closing Price~avgScore model")+
+  geom_point(size = 2) + ggtitle("Closing Price~avgScore model")+
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p3 <-results_prcChange %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 4) + ggtitle("Price Change~avgScore model")+
+  geom_point(size = 2) + ggtitle("Price Change~avgScore model")+
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 grid.arrange(arrangeGrob(p1+ 
@@ -359,9 +359,10 @@ dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %
   geom_line(aes(day,price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 
-hourlyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = isoweek(day_hr)) %>% 
+hourlyStockTweetNormalized %>% 
+  filter(symbol %in% selectively_analyzed_symbols & day_hr > ymd_hms("2016-04-24 00:00:00")) %>% 
   ggplot()+geom_line(aes(day_hr,avgScore, color="Sentiment Score"))+
-  geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol+week,scales = "free") + 
+  geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 
 

@@ -2,7 +2,14 @@ library(dplyr)
 library(readr)
 library(lubridate)
 library(stringr)
-
+#install.packages("NLP")
+#install.packages("tm")
+#install.packages("wordcloud")
+#install.packages("RColorBrewer")
+library(NLP)
+library(tm)
+library(RColorBrewer)
+library(wordcloud)
 # Following is the list of all the stocks which we have downloaded the tweets and the stocks from Yahoo finance
 tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR","XOM","PSX","VLO","PGR","CINF","FAF","JBLU","DAL","HA","ACN","INFY","CTSH")
 # Sectors associate with each stock
@@ -104,3 +111,36 @@ hourly_tweet_score <- scores %>%
 # Let us store the 4 datasets into a .rdata file 
 save(tweets_est, scores, daily_tweet_score,hourly_tweet_score,  file = "/code/CSCIE-107/E107project/pulkit/processed-tweets.RData")
 
+rm(scores, daily_tweet_score,hourly_tweet_score)
+gc()
+# Create a corpus of words
+docs <- Corpus(VectorSource(tweets_est$text))
+# Convert all the text to lower case
+docs <- tm_map(docs, content_transformer(tolower))
+
+# Remove the stock symbols words and a few other words
+ignore_words<- c(tolower(tickers_symbols),'apple','google','googl','facebook','twitter')
+docs <- tm_map(docs, removeWords, tolower(ignore_words)) 
+# Remove numbers
+docs <- tm_map(docs, removeNumbers)
+# Remove english common stopwords
+docs <- tm_map(docs, removeWords, stopwords("english"))
+# Remove punctuations
+docs <- tm_map(docs, removePunctuation)
+# Eliminate extra white spaces
+docs <- tm_map(docs, stripWhitespace)
+# Build a term-document matrix, this matrix has a very large dimensions
+dtm <- TermDocumentMatrix(docs)
+# Make a submatrix with limited rows
+dtm <- removeSparseTerms(dtm, 0.995)
+# Make a matrix
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+#Convert to dataframe
+d <- data.frame(word = names(v),freq=v)
+# Save the wordmap to a file
+png("/code/CSCIE-107/E107project/pulkit/wordCloud.png", width=12, height=8, units="in", res=300)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=2000, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+dev.off()
