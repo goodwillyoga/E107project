@@ -3,12 +3,37 @@ title: "Stock_Twits_Sentiment_Analysis"
 output: html_document
 ---
 
-### Methodology for extraction of Data - StockTwits 
-  We follwed a similar approach as for Twitter data to collect tweets for the chosen stocks for three weeks from [StockTwits](https://api.stocktwits.com/api/2/streams/symbol/AAPL.json). The dats gathering, cleaning and processing steps can be summarized as below
-  
-  ![StockTwits Workflow](https://github.com/goodwillyoga/E107project/blob/master/pooja/StockTwitsProcess.png?raw=true)
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+if (!require("dplyr")) {
+   install.packages("dplyr", dependencies = TRUE)
+   }
+if (!require("readr")) {
+   install.packages("readr", dependencies = TRUE)
+   }
+if (!require("stringr")) {
+   install.packages("stringr", dependencies = TRUE)
+   }
+if (!require("ggplot2")) {
+   install.packages("ggplot2", dependencies = TRUE)
+   }
+if (!require("broom")) {
+   install.packages("broom", dependencies = TRUE)
+   }
+if (!require("lubridate")) {
+   install.packages("lubridate", dependencies = TRUE)
+   }
+if (!require("ggrepel")) {
+   install.packages("ggrepel", dependencies = TRUE)
+   }
+if (!require("RColorBrewer")) {
+   install.packages("RColorBrewer", dependencies = TRUE)
+   }
+if (!require("gplots")) {
+  install.packages("gplots", dependencies = TRUE)
+}
+if (!require("portfolio")) {
+  install.packages("portfolio")
+}
 library(dplyr)
 library(readr)
 library(stringr)
@@ -16,17 +41,8 @@ library(ggplot2)
 library(broom)
 library(lubridate)
 library(ggrepel)
-if (!require("RColorBrewer")) {
-   install.packages("RColorBrewer", dependencies = TRUE)
-   }
 library(RColorBrewer)
-if (!require("gplots")) {
-  install.packages("gplots", dependencies = TRUE)
-}
 library(gplots)
-if (!require("portfolio")) {
-  install.packages("portfolio")
-}
 library(portfolio)
    
 
@@ -48,15 +64,15 @@ data <- data %>% mutate(utc.time = as.POSIXct(data$createdat, tz="UTC")) %>%
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #EDA for tweet counts, sentiment score and symbols
-data %>% 
-  group_by(symbol) %>%
-  summarize(tweet_counts = n()) %>%
-  ggplot(aes(x=symbol, y=tweet_counts, size=tweet_counts)) + 
-  geom_point(aes(color=symbol)) +
-  geom_text_repel(aes(symbol, tweet_counts, label=symbol)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title="Tweet counts") +
-  theme(legend.position = "none") 
+# data %>% 
+#   group_by(symbol) %>%
+#   summarize(tweet_counts = n()) %>%
+#   ggplot(aes(x=symbol, y=tweet_counts, size=tweet_counts)) + 
+#   geom_point(aes(color=symbol)) +
+#   geom_text_repel(aes(symbol, tweet_counts, label=symbol)) +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   labs(title="Tweet counts") +
+#   theme(legend.position = "none") 
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -189,16 +205,62 @@ dat8 <- data.frame(Normalized_Percent_Change_By_Day = c(dat8$scale_pchange_price
 dat8 <- cbind(dat8, symbol="IBM")
 ```
 
+### Methodology for extraction of Data - StockTwits 
+  We follwed a similar approach as for Twitter data to collect tweets for the chosen stocks for three weeks from [StockTwits](https://api.stocktwits.com/api/2/streams/symbol/AAPL.json). The data gathering, cleaning and processing steps can be summarized as below
+  
+  ![StockTwits Workflow](https://github.com/goodwillyoga/E107project/blob/master/pooja/StockTwitsProcess.png?raw=true)
+  
+In the [stock-twits_multiple.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits_multiple.R) file we make an API call, to StockTwits for a given symbol every 15 minutes for 3 weeks, that returns response in JSON. We use rjson library to extract the id, message, timestamp and symbol from the JSON response. 
+
+TODO PUT THE SAMPLE HERE
+
+Next we aggregate collected data in  [stock-twits-processing.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-processing.R) file and cleanup duplicate messages. We then calculate the sentiment score for each tweet( or message) by taking the counts of postive terms minus the counts of negative terms in a tweet as explained in a paper [here](http://www.r-bloggers.com/an-example-on-sentiment-analysis-with-r/). We used [AFINN](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010) word list and English Opinion Lexicon positive and negative word lists to compare the words in a tweet to determine if it is a postiver term or a negative term to calculate the sentiment score. 
+
+In the final modelling step in [stock-twits-analysis.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-analysis.R) file, we combine the StockTwits data and [Yahoo! finance data](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) to model the stock price based on the tweet counts and sentiment scores.
+
+Next we proceed with exploratory data analysis. 
+
+
+#### Exploratory Data Analysis for Stock Twits Data
+
+We plotted heatmap to show the stock price and tweet counts for all chosen symbols. The area for each symbol in the heatmap represents the price of the stock for a given day. The color scale represents the tweet counts with lighter green reperenting more number of tweet counts for a given symbol. (This data visualization be extended to a Shiny app in the future, where we can present user a date picker and they can see the heatmap for a given day)
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+dat.plot <- 
+  dat.byday %>% select(symbol, day, price, tweet_counts) %>%
+  filter(day == "4/19/2016") %>%
+  mutate(price=round(price)) %>%
+  select(symbol, round(price), tweet_counts) 
+
+# tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR")
+# sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
+#              "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology")
+# ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
+# data <- inner_join(dat.plot,ticker_sector)  
+
+#Sector characters are to long
+#map.market(id=data$symbol, area=data$price, group=data$sector, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(TRUE,TRUE))
+
+data <- dat.plot
+map.market(id=data$symbol, area=data$price, group=data$symbol, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(FALSE,TRUE))
+
+
+```
+
+ 
+
+
 #### Density plot of normalized hourly percent change in sentiment score and price change 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 #Overlay Density Plot
-datz <- rbind(dat6, dat7, dat8)
-datz %>% 
-  ggplot(aes(x = Normalized_Percent_Change_By_Day, fill = lines)) + geom_density(alpha = 0.5) + 
-  facet_wrap(~symbol) +
-  theme(legend.position="bottom")
+# datz <- rbind(dat6, dat7, dat8)
+# datz %>% 
+#   ggplot(aes(x = Normalized_Percent_Change_By_Day, fill = lines)) + geom_density(alpha = 0.5) + 
+#   facet_wrap(~symbol) +
+#   theme(legend.position="bottom")
 
 #Overlay Density Plot
 datz <- rbind(dat3, dat4, dat5)
@@ -288,24 +350,4 @@ ggplot(data=words, aes(x=words,y=counts, size=counts, color=as.factor(label))) +
 
 #### Heatmap 
 
-```{r}
-dat.plot <- 
-  dat.byday %>% select(symbol, day, price, tweet_counts) %>%
-  filter(day == "4/19/2016") %>%
-  mutate(price=round(price)) %>%
-  select(symbol, round(price), tweet_counts) 
 
-tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR")
-sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
-             "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology")
-ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
-data <- inner_join(dat.plot,ticker_sector)  
-
-#Sector characters are to long
-#map.market(id=data$symbol, area=data$price, group=data$sector, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(TRUE,TRUE))
-
-data <- dat.plot
-map.market(id=data$symbol, area=data$price, group=data$symbol, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(FALSE,TRUE))
-
-
-```
