@@ -354,9 +354,15 @@ grid.arrange(arrangeGrob(p1+
 
 rm(p1, p2, p3, results_prcChange, results_price, results_volume,fits)
 
+dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = isoweek(day)) %>% 
+  ggplot()+geom_line(aes(day,avgScore, color="Sentiment Score"))+
+  geom_line(aes(day,price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
+
 hourlyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = isoweek(day_hr)) %>% 
   ggplot()+geom_line(aes(day_hr,avgScore, color="Sentiment Score"))+
   geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol+week,scales = "free") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
+
 
 ```
