@@ -104,26 +104,26 @@ sentiment_scores <- lapply(1:dat.length, function(i){
           vNegMatches <- length(e$negWords) 
           
           score <- vPosMatches - vNegMatches
-          e$dat3 <- rbind(e$dat3,cbind(e$dat2[i,], "sentiment_score" = score))
-          e$posWords <- rbind(e$posWords, posTerms)
-          e$negWords <- rbind(e$negWords, negTerms)
-          #paste("i ", i, "score " , score)
+          dat3 <- cbind(e$dat2[i,], "sentiment_score" = score)
+          posWords <- rbind(e$posWords, posTerms)
+          negWords <- rbind(e$negWords, negTerms)
+          
+          write_csv(dat3, '/Users/poojasingh/stock_twits_sentiment_score_na', append=TRUE)
+          write_csv(as.data.frame(posTerms), '/Users/poojasingh/posWords_na', append=TRUE)
+          write_csv(as.data.frame(negTerms), '/Users/poojasingh/negWords_na', append=TRUE)
 })
 paste("End calculating sentiment score...")
 Sys.time()
 
-write.csv(e$dat3, "/Users/poojasingh/stock_twits_sentiment_score_n1.csv")
-write.csv(e$posWords, "/Users/poojasingh/posWords_n1.csv")
-write.csv(e$negWords, "/Users/poojasingh/negWords_n1.csv")
 
-hist(e$dat3$sentiment_score)
-
-e$dat3 %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIG", "GS", "IBM")) %>%
-  ggplot(aes(x = sentiment_score, fill=symbol, color=symbol)) +
-  geom_bar() 
-
-e$dat3 %>%
-  ggplot(aes(symbol,sentiment_score, fill=symbol, color=symbol)) + geom_point()
-str(e$dat3)
+# hist(e$dat3$sentiment_score)
+# 
+# e$dat3 %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIG", "GS", "IBM")) %>%
+#   ggplot(aes(x = sentiment_score, fill=symbol, color=symbol)) +
+#   geom_bar() 
+# 
+# e$dat3 %>%
+#   ggplot(aes(symbol,sentiment_score, fill=symbol, color=symbol)) + geom_point()
+# str(e$dat3)
 
 
