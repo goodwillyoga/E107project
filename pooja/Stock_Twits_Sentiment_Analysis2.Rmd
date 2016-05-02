@@ -19,7 +19,10 @@ if (!require("gplots")) {
   install.packages("gplots", dependencies = TRUE)
 }
 library(gplots)
-
+if (!require("portfolio")) {
+  install.packages("portfolio")
+}
+library(portfolio)
    
 
 #Supress warnings
@@ -286,22 +289,18 @@ dat.plot <-
   filter(day == "4/19/2016") %>%
   mutate(price=round(price)) %>%
   select(symbol, round(price), tweet_counts) 
-View(dat.plot) 
 
-rnames <- dat.plot[,1]                        # assign labels in column 1 to "rnames"
-mat_data <- data.matrix(dat.plot[,2:ncol(dat.plot)])  # transform columns into a matrix
-rownames(mat_data) <- rnames$symbol
-my_palette <- colorRampPalette(c("red", "green"))
-heatmap.2(mat_data,
-          cellnote = mat_data,  
-          main = 'Correlation', 
-          notecol='black',     
-          density.info='none',  
-          trace="none",         
-          #margins =c(2,2),     
-          col=my_palette,      
-          dendrogram='none',    
-          cexColumn= 0.2,
-          srtCol=0,   
-          cexCol=1.0)
+tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR")
+sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
+             "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology")
+ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
+data <- inner_join(dat.plot,ticker_sector)  
+
+#Sector characters are to long
+#map.market(id=data$symbol, area=data$price, group=data$sector, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(TRUE,TRUE))
+
+data <- dat.plot
+map.market(id=data$symbol, area=data$price, group=data$symbol, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(FALSE,TRUE))
+
+
 ```
