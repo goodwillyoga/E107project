@@ -3,6 +3,11 @@ title: "Stock_Twits_Sentiment_Analysis"
 output: html_document
 ---
 
+### Methodology for extraction of Data - StockTwits 
+  We follwed a similar approach as for Twitter data to collect tweets for the chosen stocks for three weeks from [StockTwits](https://api.stocktwits.com/api/2/streams/symbol/AAPL.json). The dats gathering, cleaning and processing steps can be summarized as below
+  
+  ![StockTwits Workflow](https://github.com/goodwillyoga/E107project/blob/master/pooja/StockTwitsProcess.png?raw=true)
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(dplyr)
 library(readr)
