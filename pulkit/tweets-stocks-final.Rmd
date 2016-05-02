@@ -278,3 +278,85 @@ grid.arrange(arrangeGrob(p1+
 rm(p1, p2, p3, results_prcChange, results_price, results_volume,fits)
 
 ```
+
+Last let us try to model hourly volume change, hourly price and hourly price change with the sentiment scores
+```{r ,echo=FALSE, message=FALSE}
+
+hourlyStockTweetNormalized <- hourly_stockData %>% 
+  mutate(day = as.Date(day_hr)) %>%
+  group_by(symbol,day) %>% mutate(n=n()) %>%  filter(n>1) %>%
+  mutate_each(funs(normalize), hourlyVolumeChng) %>% 
+  mutate_each(funs(normalize),avgPrice) %>% 
+  mutate_each(funs(normalize),prcChange) %>% 
+  inner_join(hourly_tweet_score, by=c("symbol"="symbol", "day_hr"="day_hr")) %>% ungroup() %>%
+  select(symbol,avgPrice,hourlyVolumeChng,prcChange,sector,day_hr, date_timelb,avgScore)
+
+# Let us model hourlyVolumeChange with avgScore and 
+
+fits <- hourlyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(hourlyVolumeChng ~ avgScore, data = .))
+
+results_volume <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_volume)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_volume, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~avgScore model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+# Let us model closing avgPrice vs count for each stock
+fits <- hourlyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(avgPrice ~ avgScore, data = .))
+
+results_price <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_price)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_price, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Closing Price~avgScore model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+
+# Let us model Price Change vs count for all stocks
+fits <- hourlyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(prcChange ~ avgScore, data = .))
+
+results_prcChange <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_prcChange)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_prcChange, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily Price Change~avgScore model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+# Let us plot specific for the 3 stocks 
+p1<- results_volume %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(symbol, pval, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~avgScore model")+ theme(legend.position="bottom")
+
+p2 <- results_price %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Closing Price~avgScore model")+ theme(legend.position="bottom")
+
+p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~avgScore model")+ theme(legend.position="bottom")
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
+
+# No need to plot the confidence intervals as the pvalues itself are very high
+
+rm(p1, p2, p3, results_prcChange, results_price, results_volume,fits)
+
+hourlyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = isoweek(day_hr)) %>% 
+  ggplot()+geom_line(aes(day_hr,avgScore, color="Sentiment Score"))+
+  geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol+week,scales = "free") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
