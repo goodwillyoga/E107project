@@ -11,6 +11,16 @@ library(ggplot2)
 library(broom)
 library(lubridate)
 library(ggrepel)
+if (!require("RColorBrewer")) {
+   install.packages("RColorBrewer", dependencies = TRUE)
+   }
+library(RColorBrewer)
+if (!require("gplots")) {
+  install.packages("gplots", dependencies = TRUE)
+}
+library(gplots)
+
+   
 
 #Supress warnings
 options(warn=-1)
@@ -266,5 +276,32 @@ ggplot(data=words, aes(x=words,y=counts, size=counts, color=as.factor(label))) +
   theme(legend.position = "none") +
   theme(axis.text.x = element_blank()) +
   labs(title="Words Inforgraphics", y="Counts", x="Positive or Negative Sentiment Words")
+```
 
+#### Heatmap 
+
+```{r}
+dat.plot <- 
+  dat.byday %>% select(symbol, day, price, tweet_counts) %>%
+  filter(day == "4/19/2016") %>%
+  mutate(price=round(price)) %>%
+  select(symbol, round(price), tweet_counts) 
+View(dat.plot) 
+
+rnames <- dat.plot[,1]                        # assign labels in column 1 to "rnames"
+mat_data <- data.matrix(dat.plot[,2:ncol(dat.plot)])  # transform columns into a matrix
+rownames(mat_data) <- rnames$symbol
+my_palette <- colorRampPalette(c("red", "green"))
+heatmap.2(mat_data,
+          cellnote = mat_data,  
+          main = 'Correlation', 
+          notecol='black',     
+          density.info='none',  
+          trace="none",         
+          #margins =c(2,2),     
+          col=my_palette,      
+          dendrogram='none',    
+          cexColumn= 0.2,
+          srtCol=0,   
+          cexCol=1.0)
 ```
