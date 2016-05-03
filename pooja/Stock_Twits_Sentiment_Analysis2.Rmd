@@ -50,32 +50,21 @@ library(portfolio)
 options(warn=-1)
 
 #read stick-twits_sentiments generate from stock_twits_processing.R file
-data <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/data/stock_twits_sentiment_score3.csv")[-1]
+#data <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/data/stock_twits_sentiment_score3.csv")[-1]
+data <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock_twits_sentiment_score_na.csv")
+colnames(data)[1] <- "id"
+colnames(data)[2] <- "message"
 colnames(data)[3] <- "createdat"
+colnames(data)[4] <- "symbol"
+colnames(data)[5] <- "sentiment_score"
+length(data$id)
 
 #Convert to UTC to EST time zone 
 data <- data %>% mutate(utc.time = as.POSIXct(data$createdat, tz="UTC")) %>%
                  mutate(est.time = format(utc.time, tz="America/New_York")) %>%
                  mutate(est.date = substr(as.character(format(strftime(est.time, '%m/%d/%Y'))), 2,10)) %>%
                  mutate(est.hour = paste(est.date, hour(est.time)))
-```
 
-#### Exploratory Data Analysis Plots for tweet counts
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#EDA for tweet counts, sentiment score and symbols
-# data %>% 
-#   group_by(symbol) %>%
-#   summarize(tweet_counts = n()) %>%
-#   ggplot(aes(x=symbol, y=tweet_counts, size=tweet_counts)) + 
-#   geom_point(aes(color=symbol)) +
-#   geom_text_repel(aes(symbol, tweet_counts, label=symbol)) +
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   labs(title="Tweet counts") +
-#   theme(legend.position = "none") 
-```
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Percent change function
 pcchange=function(x,lag=1) {
   c(diff(x,lag))/x
@@ -188,21 +177,27 @@ dat5 <- data.frame(Normalized_Percent_Change_By_Hour = c(dat5$scale_pchange_pric
                    , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat5$scale_pchange_price_change)))
 dat5 <- cbind(dat5, symbol="IBM")
 
-#Plot overlay denisty plots for perchange change in stock price and percent change in sentiment_score
-dat6 <- subset(dat.byday, symbol=="EIX")
-dat6 <- data.frame(Normalized_Percent_Change_By_Day = c(dat6$scale_pchange_price_change, dat6$scale_pchange_avg_score)
-                   , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat6$scale_pchange_price_change)))
-dat6 <- cbind(dat6, symbol="EIX")
+#EDA for positive words and negative words 
+#Count all positive words that were matched in stocktwits messages
+posWords <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/posWords_na.csv")
+colnames(posWords)[1] <- c('words')
+posWords <- posWords %>% group_by(words) %>% summarize(counts=n())
+len <- length(posWords$words)
+posWords <- cbind(posWords, rep('positive',len))
+colnames(posWords)[3] <- c('sentiment')
 
-dat7 <- subset(dat.byday, symbol=="GS")
-dat7 <- data.frame(Normalized_Percent_Change_By_Day = c(dat7$scale_pchange_price_change, dat7$scale_pchange_avg_score)
-                   , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat7$scale_pchange_price_change)))
-dat7 <- cbind(dat7, symbol="GS")
-
-dat8 <- subset(dat.byday, symbol=="IBM")
-dat8 <- data.frame(Normalized_Percent_Change_By_Day = c(dat8$scale_pchange_price_change, dat8$scale_pchange_avg_score)
-                   , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat8$scale_pchange_price_change)))
-dat8 <- cbind(dat8, symbol="IBM")
+#Count all negative words that were matched in message stocktwits messages
+negWords <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/negWords_na.csv")
+colnames(negWords)[1] <- c('words')
+negWords <- negWords %>% group_by(words) %>% summarize(counts=n())
+len <- length(negWords$words)
+negWords <- cbind(negWords, rep('negative',len))
+colnames(negWords)[3] <- c('sentiment')
+ 
+#Combine al the positive and nagative words and select top 20 frquently used positive words and negative words
+words <- rbind(posWords, negWords)
+freqwords <- words %>% filter(sentiment=='positive') %>% top_n(50,counts)
+freqwords <- rbind(freqwords, words %>% filter(sentiment=='negative') %>% top_n(50,counts))
 ```
 
 ### Methodology for extraction of Data - StockTwits 
@@ -223,7 +218,7 @@ Next we proceed with exploratory data analysis.
 
 #### Exploratory Data Analysis for Stock Twits Data
 
-We plotted heatmap to show the stock price and tweet counts for all chosen symbols. The area for each symbol in the heatmap represents the price of the stock for a given day. The color scale represents the tweet counts with lighter green reperenting more number of tweet counts for a given symbol. (This data visualization be extended to a Shiny app in the future, where we can present user a date picker and they can see the heatmap for a given day)
+1. We plotted heatmap to show the stock price and tweet counts for all chosen symbols. The area for each symbol in the heatmap represents the price of the stock for a given day. The color scale represents the tweet counts with lighter green reperenting more number of tweet counts for a given symbol. (This data visualization be extended to a Shiny app in the future, where we can present user a date picker and they can see the heatmap for a given day)
 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -233,41 +228,25 @@ dat.plot <-
   mutate(price=round(price)) %>%
   select(symbol, round(price), tweet_counts) 
 
-# tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR")
-# sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
-#              "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology")
-# ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
-# data <- inner_join(dat.plot,ticker_sector)  
-
-#Sector characters are to long
-#map.market(id=data$symbol, area=data$price, group=data$sector, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(TRUE,TRUE))
-
-data <- dat.plot
-map.market(id=data$symbol, area=data$price, group=data$symbol, color=data$tweet_counts, main="Stock Price and Tweet counts", lab=c(FALSE,TRUE))
-
-
+map.market(id=dat.plot$symbol, area=dat.plot$price, group=dat.plot$symbol, color=dat.plot$tweet_counts, main="Stock Price and Tweet counts", lab=c(FALSE,TRUE))
 ```
 
- 
-
-
-#### Density plot of normalized hourly percent change in sentiment score and price change 
+2. We plotted the heatmap for the top 50 positive and negative matched words in StockTwits messages. The area and color in the heatmap represents the counts for matched words.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+map.market(id=freqwords$words, area=freqwords$counts, group=freqwords$words, color=freqwords$counts, main="Top 50 Positive and Negative Sentiment Words", lab=c(FALSE,TRUE))
+```
 
-#Overlay Density Plot
-# datz <- rbind(dat6, dat7, dat8)
-# datz %>% 
-#   ggplot(aes(x = Normalized_Percent_Change_By_Day, fill = lines)) + geom_density(alpha = 0.5) + 
-#   facet_wrap(~symbol) +
-#   theme(legend.position="bottom")
+3. We plotted the density plot of normalized hourly percent change in sentiment score and price change for three chosen stocks (EIX, IBM, and GS).
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Overlay Density Plot
-datz <- rbind(dat3, dat4, dat5)
+datz <- rbind(dat3, dat5, dat4)
 datz %>% 
   ggplot(aes(x = Normalized_Percent_Change_By_Hour, fill = lines)) + geom_density(alpha = 0.5) + 
   facet_wrap(~symbol) +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  labs(title='Density plot of sentiment score and price change')
 ```
 
 #### Plot p-values for linear regression fit model
@@ -331,23 +310,5 @@ results4 %>%
 
 ```
 
-#### Placeholder for Words Infographics
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-words <- cbind(c('up','rise','hike'), c(10, 4, 2), c('positive', 'positive', 'positive'))
-colnames(words) <- c('words','counts', 'label')
-words <- rbind(words,cbind(c('fail','down','discredit'), c(1, 9, 5), c('negative', 'negative', 'negative')))
-words <- as.data.frame(words)
-library(ggplot2)
-library(ggrepel)
-ggplot(data=words, aes(x=words,y=counts, size=counts, color=as.factor(label))) + 
-  geom_point() +
-  geom_text_repel(aes(words, counts, label=words)) + 
-  theme(legend.position = "none") +
-  theme(axis.text.x = element_blank()) +
-  labs(title="Words Inforgraphics", y="Counts", x="Positive or Negative Sentiment Words")
-```
-
-#### Heatmap 
 
 
