@@ -508,9 +508,9 @@ returns_results %>% kable
 
 ```
 
-```{r, warning=FALSE}
+<pre><code>
 paste('From above results, it appears very well that Monte Carlo simulation is in agreement with the regression results above. On an average, the mean returns of low beta stocks is much higher when compared to very high beta stocks.')
-```
+</code></pre>
 
 # Analyzing impact of twitter on Stock prices
 ```{r, echo=FALSE, message=FALSE}
@@ -950,9 +950,9 @@ dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %
 
 ```
 
-```{r, warning=FALSE}
-paste('From the above plot we can clearly see that the sentimnet scores appers to follow the price movements of the stocks.') 
-```
+<pre><code>
+From the above plot we can clearly see that the sentimnet scores appers to follow the price movements of the stocks.
+</code></pre>
 
 # Sentiment Analysis of StockTwits data on Stock prices
 
