@@ -19,6 +19,7 @@ options(warn=-1)
 library(RColorBrewer)
 library(portfolio)
 library(knitr)
+theme_set(theme_bw(base_size = 14))
 ```
 #Background and Motivation
 Twitter is a widely used online social media. Here we analyze 70 stocks across different industries and apply a linear regression to predict stock market indicators, using Twitter data. During the time window between April 6th to April 29th we were able to collect 339345 tweets. We find that there are a few stocks out of the choosed stocks for which the 3 stock predictors can be modelled based on the count of tweets. We then focus specifically on the 3 stocks high beta (GS - Financials), med beta (IBM - Info Tech) and low beta (EIX - utilities) to see if this model can successfuly be used to predict market indicators. We do the above analysis both for daily and hourly data. Then we move towards analyzing the sentiments from the stocks and see if we can model the the predictors with the average sentiment score on the hourly basis. Coming towards the end we try to visualize the pattern between the daily sentiment score with the closing prices and see that sentiments follow the market movements.
@@ -92,7 +93,7 @@ We can see that in general technology companies tend to have much more number of
 Look at distribution of tweets per day
 ```{r,echo=FALSE, message=FALSE, fig.width=9}
 tweets_est %>% group_by(dt) %>% # group on Date
-  summarise(count = n())  %>% mutate(wday = wday(dt)) %>% # count number of rows for each date
+  summarise(count = n())  %>% mutate(wday = lubridate::wday(dt)) %>% # count number of rows for each date
   ggplot(aes(dt, log(count), color=wday)) + geom_point() +
   scale_colour_gradientn(colours=rainbow(7)) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -132,7 +133,7 @@ map.market(id=joinedDf$symbol, area=joinedDf$count, group=joinedDf$symbol, color
 ```
 
 Let us look at daily closing prices/Volumes for the 3 choosen stocks
-```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=3}
+```{r,echo=FALSE, message=FALSE, fig.width=9}
 # Plot variation of closing price for the 3 chosen stocks
 dailyStockData %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot(aes(day, price)) + geom_line(aes(color=symbol)) + 
@@ -152,7 +153,7 @@ We can see that there is some variation in the daily traded volumes and the pric
 
 ```{r,echo=FALSE, message=FALSE}
 #We know that Stock markets are closed on weekends, let us compute the trading days so that we can focus on the trading days only
-tradingDays <- stocks_est %>% mutate(day = mdy(lastTradeDate)) %>% ungroup() %>% select(day) %>% distinct(day)
+tradingDays <- stocks_est %>% mutate(day = lubridate::mdy(lastTradeDate)) %>% ungroup() %>% select(day) %>% distinct(day)
 ```
 
 ### Applying Linear Regression
@@ -251,19 +252,19 @@ p1<- results_volume_count %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot( aes(symbol, pval, color=symbol)) + geom_point() + 
   geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("Pvalues") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Count model")+ theme(legend.position="bottom")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Count")+ theme(legend.position="bottom")
 
 p2 <- results_price_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+
   geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Closing Price~Count model")+ theme(legend.position="bottom")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("ClosingPrc~Count")+ theme(legend.position="bottom")
 
 p3<- results_prcChange_count %>% 
   filter(symbol %in% selectively_analyzed_symbols)  %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+
   geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Daily Price Change~count model")+ theme(legend.position="bottom")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("DailyPrcChn~Count")+ theme(legend.position="bottom")
 
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
@@ -275,21 +276,21 @@ p1 <- results_volume_count %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 2) + ggtitle("Volume~Count model")+ xlab("Symbols") + ylab("Confidence Interval") +
+  geom_point(size = 2) + ggtitle("Volume~Count")+ xlab("Symbols") + ylab("Conf. Interval") +
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p2 <-results_price_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 2) + ggtitle("Closing Price~Count model")+ xlab("Symbols") + ylab("Confidence Interval") +
+  geom_point(size = 2) + ggtitle("ClosingPrc~Count")+ xlab("Symbols") + ylab("Conf. Interval") +
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p3 <-results_prcChange_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 2) + ggtitle("Daily Price Change~Count model")+ xlab("Symbols") + ylab("Confidence Interval") +
+  geom_point(size = 2) + ggtitle("DailyPrcChn~Count")+ xlab("Symbols") + ylab("Conf. Interval") +
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 grid.arrange(arrangeGrob(p1+ 
@@ -380,17 +381,17 @@ From the above plots we can see that for stocks AVP and PSX, we can fit a linear
 p1<- results_volume %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot( aes(symbol, pval, color=symbol)) + geom_point() + xlab("Symbols") + ylab("P-values") +
   geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Sentiment Score model")+ theme(legend.position="bottom")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Score")+ theme(legend.position="bottom")
 
 p2 <- results_price %>% filter(symbol %in% selectively_analyzed_symbols)  %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+ xlab("Symbols") + ylab("P-values") +
   geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Closing Price~Sentiment Score model")+ theme(legend.position="bottom")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("ClosingPrc~Score")+ theme(legend.position="bottom")
 
 p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+ xlab("Symbols") + ylab("P-values")+
   geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~Sentiment Score model")+ theme(legend.position="bottom")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("PrcChange~Score")+ theme(legend.position="bottom")
 
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
@@ -469,7 +470,7 @@ Let us try to plot the Daily Stock Prices and sentiment score for a few stocks
 
 ```{r ,echo=FALSE, message=FALSE, fig.width=9}
 selectively_analyzed_symbols <- c(selectively_analyzed_symbols, 'AAPL', 'GOOG','AVP')
-dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = isoweek(day)) %>% 
+dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = lubridate::isoweek(day)) %>% 
   ggplot()+geom_line(aes(day,avgScore, color="Sentiment Score"))+
   geom_line(aes(day,price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
