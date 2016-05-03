@@ -12,7 +12,7 @@ e$dat <- c()
 
 paste("Start aggregating data...")
 Sys.time()
-aggregate_data  <-  suppressWarnings(lapply(1:64, function(i) {
+aggregate_data  <-  suppressWarnings(lapply(1:62, function(i) {
     path = ""
     tryCatch({
       
@@ -73,9 +73,6 @@ length(e$posTerms)
 
 #Temp variables
 e$dat2 <- e$dat
-e$dat3  <- c()
-e$posWords  <- c()
-e$negWords  <- c()
 
 paste("Start calculating sentiment score...")
 Sys.time()
@@ -100,30 +97,17 @@ sentiment_scores <- lapply(1:dat.length, function(i){
           negTerms <- negTerms[!is.na(negTerms)]
 
           #build vector with matches between sentence and each category
-          vPosMatches <- length(e$posWords) 
-          vNegMatches <- length(e$negWords) 
+          vPosMatches <- length(posTerms) 
+          vNegMatches <- length(negTerms) 
           
           score <- vPosMatches - vNegMatches
-          dat3 <- cbind(e$dat2[i,], "sentiment_score" = score)
-          posWords <- rbind(e$posWords, posTerms)
-          negWords <- rbind(e$negWords, negTerms)
+          dat3 <- cbind(e$dat2[i,], 'sentiment_score' = score)
           
-          write_csv(dat3, '/Users/poojasingh/stock_twits_sentiment_score_na', append=TRUE)
-          write_csv(as.data.frame(posTerms), '/Users/poojasingh/posWords_na', append=TRUE)
-          write_csv(as.data.frame(negTerms), '/Users/poojasingh/negWords_na', append=TRUE)
+          write_csv(dat3, '/Users/poojasingh/stock_twits_sentiment_score_na.csv', append=TRUE)
+          write_csv(as.data.frame(posTerms), '/Users/poojasingh/posWords_na.csv', append=TRUE)
+          write_csv(as.data.frame(negTerms), '/Users/poojasingh/negWords_na.csv', append=TRUE)
 })
 paste("End calculating sentiment score...")
 Sys.time()
-
-
-# hist(e$dat3$sentiment_score)
-# 
-# e$dat3 %>% filter(symbol %in% c("APPL", "YHOO", "MSFT", "TSLA", "GOOG", "FB", "EIG", "GS", "IBM")) %>%
-#   ggplot(aes(x = sentiment_score, fill=symbol, color=symbol)) +
-#   geom_bar() 
-# 
-# e$dat3 %>%
-#   ggplot(aes(symbol,sentiment_score, fill=symbol, color=symbol)) + geom_point()
-# str(e$dat3)
 
 
