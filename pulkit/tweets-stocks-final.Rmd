@@ -1,5 +1,5 @@
 ---
-title: "Tweets Stocks Analysis Daily/Hourly"
+title: "Analysis of Tweets(volume/sentiments) with Stocks volume and Prices"
 output: html_document
 ---
 
@@ -14,14 +14,35 @@ library(broom)
 library(ggrepel)
 # Disable logging of all warning messages
 options(warn=-1)
+#install.packages("RColorBrewer")
+#install.packages("portfolio")
+library(RColorBrewer)
+library(portfolio)
+
 ```
+#Background and Motivation
+Twitter is a widely used online social media. Here we analyze 70 stocks across different industries and apply a linear regression to predict stock market indicators, using Twitter data. We find that there are a few stocks out of the choosed stocks for which the 3 stock predictors can be modelled based on the count of tweets. We then focus specifically on the 3 stocks high beta (GS - Financials), med beta (IBM - Info Tech) and low beta (EIX - utilities) to see if this model can successfuly be used to predict market indicators. We do the above analysis both for daily and hourly data. Then we move towards analyzing the sentiments from the stocks and see if we can model the the predictors with the average sentiment score on the hourly basis. Coming towards the end we try to visualize the pattern between the daily sentiment score with the closing prices and see that sentiments follow the market movements.
 
-# Methodology for extraction of Data
- For analyzing the effect of tweets with the Stock market, we used Twitter streaming api to capture the monitored stocks in realtime and store them onto a file. The raw data in files was processed using the file twitter-data-cleaner.R. This script can be run incrementally and takes care of merging new data with the already set of processed tweets. The script twitter-data-cleaner.R creates a .Rdata file "twitter.RData" that has 4 datasets.
- (TODO add links and information about datasets).
-There is a script to process the tweets further and calculate the sentimenet score for each tweet ( tweeter-score-compute.R ), It outputes 4 datasets into a file processed-tweets.RData.  
+### Data Normalization
+We normalize each time series to z-scores on the basis of a local mean and standard deviation to provide a common scale for comparison of our predictors and stock market indicators.
 
-```{r}
+$$Z_({x_{i}}) = \frac{x_{i} - \mu(X)}{\sigma(X)}$$ 
+
+## Data Extraction
+We wanted to gather tweets from [Twitter](https://twitter.com/) and stock data from [Yahoo! Finance](http://finance.yahoo.com/). Here we try to explain briefly the steps done for extraction/processing of tweets and stocks data.
+
+![Processing Stages](/code/CSCIE-107/E107project/pulkit/Preprocessing-stages.png)
+
+### Twitter Data Extraction and Processing
+There are some limitations on the number of requests that can be made to the twitter REST api. So we decided to use the [java streaming api](https://github.com/twitter/hbc) to capture the live tweets and record them into a file twitter.json. We called this component [extractors](https://github.com/goodwillyoga/E107project/tree/master/pulkit/extractors). The file twitter.json was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [twitter-data-cleaner.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter-data-cleaner.R) is run on the files. Since this extraction process is very time consuming so this script was added the capability to perform the extraction in append mode, wherein the contents of a new file are appended to an already extracted dataset from previously processed files. The script creates a .RData file [twitter.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter.RData) with 4 datasets tweets, users, hashtags and symbols. For further analysis we will be using the tweets and symbols dataset. These datasets are read by [tweeter-score-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/tweeter-score-compute.R) which mutate the time of each tweets to America/New_York timezone. It computes the sentiment score for each tweet using the [Opinion Lexicon](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html), which has a list of 6800 positive/negative words. It stores the sentiment scores in a dataset scores. It also computes 2 additional datasets daily_tweet_score and hourly_tweet_score these datasets contain the normalized avg sentiment scores. It also creates a [word cloud](https://github.com/goodwillyoga/E107project/blob/master/pulkit/wordCloud.png) of the frequently used words in these tweets. It writes the 4 datasets into the file [processed-tweets.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/processed-tweets.RData).
+
+### Yahoo Finance Data Extraction and Processing
+We wrote a rscript [yahoo-finance-data-extractor.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-extractor.R), that extracts the prices of the choosen 70 stocks and appends it into a csv stocks.csv. The file stocks.csv was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [yahoo-finance-data-processor.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-processor.R) is run on these files which combines the records read from the current file with the already processed records and writes it into the file [yahoo-finance.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData). This [yahoo-finance.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) is then read by [stocks-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/stocks-compute.R) which creates 3 datasets stocks_est, hourly_stockData and dailyStockData. 
+
+### Basic Analysis
+We started collecting the data from 6th of April and collected till 29th April. Let us start with looking at the amount of tweets that we have collected for each symbol on log scale  
+
+```{r, echo=FALSE, message=FALSE}
 # Following is the list of all the stocks which we have downloaded the tweets and the stocks from Yahoo finance
 tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR","XOM","PSX","VLO","PGR","CINF","FAF","JBLU","DAL","HA","ACN","INFY","CTSH")
 # Sectors associate with each stock
@@ -139,6 +160,8 @@ ggplot(results_prcChange_count, aes(symbol, pval, color=sector)) + geom_point() 
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange_count,  pval <.05 )) +
   theme(legend.position="bottom")
 
+# Let us do regression plots for the 3 stocks
+dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(count,volume))+geom_point()+geom_smooth() +facet_wrap(~symbol)
 # Let us plot specific for the 3 stocks 
 p1<- results_volume_count %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(symbol, pval, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~count model")+ theme(legend.position="bottom")
@@ -148,6 +171,8 @@ p2 <- results_price_count %>% filter(symbol %in% selectively_analyzed_symbols)  
 
 p3<- results_prcChange_count %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~count model")+ theme(legend.position="bottom")
+
+dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(count,prcChange))+geom_point()+geom_smooth() +facet_wrap(~symbol)
 
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
@@ -359,11 +384,14 @@ dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %
   geom_line(aes(day,price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 
-hourlyStockTweetNormalized %>% 
-  filter(symbol %in% selectively_analyzed_symbols & day_hr > ymd_hms("2016-04-24 00:00:00")) %>% 
-  ggplot()+geom_line(aes(day_hr,avgScore, color="Sentiment Score"))+
-  geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol,scales = "free") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
+stockEnd <- dailyStockData %>% group_by(symbol) %>% arrange(date_time)%>% do(tail(., n=1)) %>% select(symbol,price)
+priceChangeOverPeriod <- dailyStockData %>% group_by(symbol) %>% arrange(date_time)%>% do(head(., n=1)) %>% select(symbol,price) %>% inner_join(stockEnd, by=c("symbol"="symbol")) %>% mutate(prcChange = `price.y` - `price.x`)
+joinedDf <- tweets_est %>% group_by(symbol) %>% 
+  summarise(count = n()) %>% ungroup() %>% inner_join(priceChangeOverPeriod, by=c("symbol"="symbol"))
+
+map.market(id=joinedDf$symbol, area=joinedDf$count, group=joinedDf$symbol, color=joinedDf$prcChange, main="Stock Price changes and Tweet counts", lab=c(FALSE,TRUE))
 
 
 ```
+
+![wordCloud](./wordCloud.png)
