@@ -509,7 +509,7 @@ returns_results %>% kable
 ```
 
 <pre><code>
-paste('From above results, it appears very well that Monte Carlo simulation is in agreement with the regression results above. On an average, the mean returns of low beta stocks is much higher when compared to very high beta stocks.')
+From above results, it appears very well that Monte Carlo simulation is in agreement with the regression results above. On an average, the mean returns of low beta stocks is much higher when compared to very high beta stocks.
 </code></pre>
 
 # Analyzing impact of twitter on Stock prices
