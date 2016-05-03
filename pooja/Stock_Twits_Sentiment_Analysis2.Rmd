@@ -67,6 +67,7 @@ length(data$id)
 data <- data %>% mutate(utc.time = as.POSIXct(data$createdat, tz="UTC")) %>%
                  mutate(est.time = format(utc.time, tz="America/New_York")) %>%
                  mutate(est.date = substr(as.character(format(strftime(est.time, '%m/%d/%Y'))), 2,10)) %>%
+                 mutate(est.date.plus.one = substr(as.character(format(mdy(est.date)+1, '%m/%d/%Y')), 2,10)) %>%
                  mutate(est.hour = paste(est.date, hour(est.time)))
 
 #Percent change function
@@ -124,29 +125,41 @@ avg_sentiment_score_by_day <- data %>%
             ungroup() %>%
             select(symbol, day, avg_score, tweet_counts, scale_pchange_avg_score, scale_pchange_tweet_counts) %>%
             unique() 
+
+#Average sentiment score for plus one day
+avg_sentiment_score_plus_a_day <- data %>% 
+            group_by(symbol, day=est.date.plus.one) %>%
+            summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
+            select(symbol, day, avg_score, tweet_counts) %>%
+            unique() 
  
 #Load YAHOO finance data
 load("/Users/poojasingh/Documents/HE107/E107project/pulkit/yahoo-finance.RData")
 
 ##Average Stock Price by hour
 avg_stocks_price_by_hour <- stocks %>% 
-                   mutate(dayhour = paste(lastTradeDate,get_24hour(lastTradeTime))) %>%
-                   group_by(symbol, dayhour) %>%
-                   summarise(price = mean(price)) %>%
-                   mutate(pchange_price_change = pcchange(price)) %>%
-                   mutate(pchange_price_change = ifelse(is.na(pchange_price_change) | is.infinite(pchange_price_change) |is.nan(pchange_price_change), 0, pchange_price_change)) %>%
-                   ungroup() %>%
-                   group_by(symbol) %>%
-                   mutate(scale_pchange_price_change = scale(pchange_price_change)) %>% 
-                   mutate(scale_pchange_price_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
-                   ungroup() %>%
-                   select(symbol, dayhour, price, scale_pchange_price_change) %>%
-                   unique()
+                  mutate(dayhour = paste(lastTradeDate,get_24hour(lastTradeTime))) %>%
+                  group_by(symbol, dayhour) %>%
+                  summarise(price = mean(price), volume=mean(volume)) %>%
+                  mutate(pchange_price_change = pcchange(price)) %>%
+                  mutate(pchange_volume_change = pcchange(volume)) %>%
+                  mutate(pchange_price_change = ifelse(is.na(pchange_price_change) | is.infinite(pchange_price_change) |is.nan(pchange_price_change), 0, pchange_price_change)) %>%
+                  mutate(pchange_volume_change = ifelse(is.na(pchange_volume_change) | is.infinite(pchange_volume_change) |is.nan(pchange_volume_change), 0, pchange_volume_change)) %>%
+                  ungroup() %>%
+                  group_by(symbol) %>%
+                  mutate(scale_pchange_price_change = scale(pchange_price_change)) %>% 
+                  mutate(scale_pchange_price_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
+                  ungroup() %>%
+                  mutate(scale_pchange_volume_change = scale(pchange_volume_change)) %>% 
+                  mutate(scale_pchange_volume_change = ifelse(is.na(pchange_volume_change) | is.infinite(pchange_volume_change) |is.nan(pchange_volume_change), 0, pchange_volume_change)) %>%
+                  ungroup() %>%
+                  select(symbol, dayhour, price, scale_pchange_price_change, scale_pchange_volume_change) %>%
+                  unique()
 
 #Average Stock Price by day
 avg_stocks_price_by_day <- stocks %>% 
                   group_by(symbol, day=lastTradeDate) %>%
-                  summarise(price = mean(price), volume = max(volume)) %>%
+                  summarise(price = mean(price), volume = mean(volume), prvClose = max(prvClose)) %>%
                   mutate(pchange_price_change = pcchange(price)) %>%
                   mutate(pchange_volume = pcchange(volume)) %>%
                   mutate(pchange_price_change = ifelse(is.na(pchange_price_change) | is.infinite(pchange_price_change) |is.nan(pchange_price_change), 0, pchange_price_change)) %>%
@@ -154,16 +167,23 @@ avg_stocks_price_by_day <- stocks %>%
                   ungroup() %>%
                   group_by(symbol) %>%
                   mutate(scale_pchange_price_change = scale(pchange_price_change)) %>% 
-                  mutate(scale_pchange_volume = scale(pchange_volume)) %>% 
+                  mutate(scale_pchange_volume_change = scale(pchange_volume)) %>% 
                   mutate(scale_pchange_price_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
-                  mutate(scale_pchange_volume = ifelse(is.na(scale_pchange_volume) | is.infinite(scale_pchange_volume) |is.nan(scale_pchange_volume), 0, scale_pchange_volume)) %>%
+                  mutate(scale_pchange_volume_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
                   ungroup() %>%
-                  select(symbol, day, price, scale_pchange_price_change, scale_pchange_volume) %>%
+                  select(symbol, day, price, prvClose, scale_pchange_price_change, scale_pchange_volume_change) %>%
+                  unique()
+
+#prevClosePrice
+prev_close_by_day <- stocks %>% 
+                  group_by(symbol, day=lastTradeDate) %>%
+                  select(symbol, day, prvClose) %>%
                   unique()
 
 #Join score and price
 dat <- inner_join(avg_stocks_price_by_hour, avg_sentiment_score_by_hour)
 dat.byday <- inner_join(avg_stocks_price_by_day, avg_sentiment_score_by_day)
+dat.prevClose <- inner_join(avg_sentiment_score_plus_a_day, prev_close_by_day)
 
 #Plot overlay denisty plots for perchange change in stock price and percent change in sentiment_score
 dat3 <- subset(dat, symbol=="EIX")
@@ -254,66 +274,141 @@ datz %>%
   labs(title='Density plot of sentiment score and price change')
 ```
 
-#### Plot p-values for linear regression fit model
+4. We plotted the histogram of sentiment score. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Fit linear models - avg_score + tweet_counts by hour
-fits1 <- dat %>%
-  group_by(symbol) %>%
-  do(mod = lm(price ~ avg_score + tweet_counts, data = .))
+hist(data$sentiment_score, main='Sentiment score', xlab='Sentiment score')
+```
 
-results1 <- tidy(fits1, mod) %>% filter(term=='avg_score') 
+#### Modeling hourly and daily stock price and volume change by sentiment score and tweet counts 
 
-#Plot p-values and see symbols that have significant results
-results1 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results1,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Hour") +
-  theme(legend.position = "none") 
+1. We fit the linear regression model for _**daily stock price change**_ by sentiment score and tweet counts. 
 
-#Fit linear models - percent change in avg_score + tweet_counts by hour
-fits2 <- dat %>%
-  group_by(symbol) %>%
-  do(mod = lm(scale_pchange_price_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
-
-results2 <- tidy(fits2, mod) %>% filter(term=='scale_pchange_tweet_counts') 
-
-#Plot p-values and see symbols that have significant results
-results2 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results2,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Hour") +
-  theme(legend.position = "none")  
-
-#Fit linear models - avg_score + tweet_counts by day
-fits3 <- dat.byday %>%
-  group_by(symbol) %>%
-  do(mod = lm(price ~ avg_score + tweet_counts, data = .))
-
-results3 <- tidy(fits3, mod) %>% filter(term=='avg_score') 
-
-#Plot p-values and see symbols that have significant results
-results3 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results3,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Price by Day") +
-  theme(legend.position = "none") 
-
-#Fit linear models by day - percent change in avg_score + tweet_counts by day
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Fit linear models by daily percent change in price ~ avg_score + tweet_counts 
 fits4 <- dat.byday %>%
   group_by(symbol) %>%
   do(mod = lm(scale_pchange_price_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
 
-results4 <- tidy(fits4, mod) %>% filter(term=='scale_pchange_tweet_counts') 
+tidy(fits4, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% kable
+
+results4 <- tidy(fits4, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') #filter(term=='scale_pchange_avg_score') 
 
 #Plot p-values and see symbols that have significant results
 results4 %>% 
   ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
   geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results4,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("P-values for Normalized percent change in Price by Day") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily percent change in price  ~ sentiment score + counts for all stocks") +
   theme(legend.position = "none") 
-
 ```
 
+2. We fit the linear regression model for _**daily stock volume change**_ by sentiment score and tweet counts.
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Fit linear models by daily percent change in volume ~ avg_score + tweet_counts 
+fits3 <- dat.byday %>%
+  group_by(symbol) %>%
+  do(mod = lm(scale_pchange_volume_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
 
+tidy(fits3, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% kable
+
+results3 <- tidy(fits3, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') #filter(term=='scale_pchange_avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results3 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results3,  p.value <.05 )) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily percent change in volume  ~ sentiment score + counts for all stocks") +
+  theme(legend.position = "none") 
+```
+
+3. We fit the linear regression model for _**hourly stock price change**_ by sentiment score and tweet counts. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Fit linear models by hourly percent change in price ~ avg_score + tweet_counts 
+fits2 <- dat %>%
+  group_by(symbol) %>%
+  do(mod = lm(scale_pchange_price_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
+
+tidy(fits2, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% kable
+
+results2 <- tidy(fits2, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') #filter(term=='scale_pchange_avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results2 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results2,  p.value <.05 )) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Hourly percent change in price  ~ sentiment score + counts for all stocks") +
+  theme(legend.position = "none") 
+```
+
+4. We fit the linear regression model for _**hourly stock volume change**_ by sentiment score and tweet counts. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Fit linear models by hourly percent change in volume ~ avg_score + tweet_counts 
+fits1 <- dat %>%
+  group_by(symbol) %>%
+  do(mod = lm(scale_pchange_volume_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
+
+tidy(fits1, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% kable
+
+results1 <- tidy(fits1, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') #filter(term=='scale_pchange_avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results1 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results1,  p.value <.05 )) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Hourly percent change in volume  ~ sentiment score + counts for all stocks") +
+  theme(legend.position = "none") 
+```
+
+5. We fit the linear regression model for _**previous day close price** using previous day's sentiment scores and counts. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Fit linear models for matching prvClose ~ avg_score + tweet_counts 
+fits5 <- dat.prevClose %>%
+  group_by(symbol) %>%
+  do(mod = lm(prvClose ~ avg_score + tweet_counts, data = .))
+
+tidy(fits5, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% kable
+
+results5 <- tidy(fits5, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') #filter(term=='avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results5 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results5,  p.value <.05 )) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily prvClose ~ avg_score + tweet_counts for all stocks") +
+  theme(legend.position = "none") 
+```
+
+6. Lastly we fit the linear regression model for _**daily stock price** using the previous close price, sentiment score and tweet counts.  
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Fit linear models by daily stock price ~ prvClose + avg_score + tweet_counts
+fits6 <- dat.byday %>%
+  group_by(symbol) %>%
+  do(mod = lm(price ~ prvClose + avg_score + tweet_counts, data = .))
+
+tidy(fits6, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% kable
+
+results6 <- tidy(fits6, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') #filter(term=='avg_score') 
+
+#Plot p-values and see symbols that have significant results
+results6 %>% 
+  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results6,  p.value <.05 )) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily price ~ prvClose + avg_score + tweet_counts for all stocks") +
+  theme(legend.position = "none") 
+  
+```
+
+#### Conclusion
+
+1. Throghout different models, including daily and hourly price change we noticed that sentiment score can be a significant predictor for some symbols. But for most symbols, tweet counts was a more significant predictor. 
+
+2. The histogram of sentiment scores varied from -5 to 5 and with this limited change we are trying to model the market. We need more advanced natural language processing techniques to determine whether it is a positive tweet or negative tweet. 
+
+3. The users who are tweeting can have a significant impact on the model. If these users are market players, their tweets will carry more weight that an uneducated user of the markets. We did not gather StockTwits user data for this project but can be considered in future.
+
+4. When we included the previous close price in the model along with sentiment score and tweet counts, we noticed that it was a significant predictor for all symbols. This is not very surprising as markets do not swing on a daily basis and instead of simple linear regression model, more advanced algorithms like LDA or nearest K-neighbour algorthms should be considered for modeling based on previous close price to predict the stock markets. 
