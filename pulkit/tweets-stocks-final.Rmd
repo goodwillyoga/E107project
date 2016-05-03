@@ -32,7 +32,7 @@ $$Z_({x_{i}}) = \frac{x_{i} - \mu(X)}{\sigma(X)}$$
 ## Data Extraction
 We wanted to gather tweets from [Twitter](https://twitter.com/) and stock data from [Yahoo! Finance](http://finance.yahoo.com/). Here we try to explain briefly the steps done for extraction/processing of tweets and stocks data.
 
-![Processing Stages](https://github.com/goodwillyoga/E107project/raw/master/pulkit/Preprocessing-stages.png)
+![Processing Stages](https://github.com/goodwillyoga/E107project/raw/master/pulkit/Preprocessing-stages-twitter.png)
 
 ### Twitter Data Extraction and Processing
 There are some limitations on the number of requests that can be made to the twitter REST api. So we decided to use the [java streaming api](https://github.com/twitter/hbc) to capture the live tweets and record them into a file twitter.json. We called this component [extractors](https://github.com/goodwillyoga/E107project/tree/master/pulkit/extractors). The file twitter.json was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [twitter-data-cleaner.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter-data-cleaner.R) is run on the files. Since this extraction process is very time consuming so this script was added the capability to perform the extraction in append mode, wherein the contents of a new file are appended to an already extracted dataset from previously processed files. The script creates a .RData file [twitter.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter.RData) with 4 datasets tweets, users, hashtags and symbols. For further analysis we will be using the tweets and symbols dataset. These datasets are read by [tweeter-score-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/tweeter-score-compute.R) which mutate the time of each tweets to America/New_York timezone. It computes the sentiment score for each tweet using the [Opinion Lexicon](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html), which has a list of 6800 positive/negative words. It stores the sentiment scores in a dataset scores. It also computes 2 additional datasets daily_tweet_score and hourly_tweet_score these datasets contain the normalized avg sentiment scores. It also creates a [word cloud](https://github.com/goodwillyoga/E107project/blob/master/pulkit/wordCloud.png) of the frequently used words in these tweets. It writes the 4 datasets into the file [processed-tweets.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/processed-tweets.RData).
@@ -76,8 +76,15 @@ tail(dailyStockData, n=3)%>% select(symbol,price,open,volume,date_timelb,sector)
 
 ```
 
+Twitter feeds also gives us the location that the user has given in the account registration, let us see what are the locations that these users belong to
+<div style="width:100%; height=50%">
+![user-presence locations](https://github.com/goodwillyoga/E107project/raw/master/pulkit/userpresence.png)
+</div>
+Let us visualize number of users for each US state
+<div style="width:100%; height=70%">
+![US-stat distribution](https://github.com/goodwillyoga/E107project/raw/master/pulkit/stateuserdistribution.png)
+</div>
 Let us start with looking at the amount of tweets that we have collected for each symbol on log scale  
-
 ```{r,echo=FALSE, message=FALSE, fig.width=9}
 
 tweets_est %>% group_by(symbol) %>% # group on symbol
@@ -212,7 +219,7 @@ colnames(results_price_count)[6]<- 'pval'
 ggplot(results_price_count, aes(symbol, pval, color=sector)) + 
   geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Closing Price~count model") + xlab("Symbols") + ylab("Pvalues")+
+  ggtitle("Closing Price~count model for Daily Data") + xlab("Symbols") + ylab("Pvalues")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price_count,  pval <.05 )) +
   theme(legend.position="bottom")
 
@@ -269,7 +276,7 @@ p3<- results_prcChange_count %>%
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
-                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
+                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized Daily Data")
 
 # Let us plot the confidence intervals
 p1 <- results_volume_count %>% 
@@ -325,7 +332,7 @@ Let us also look at the distribution of Scores
 qplot(scores$score)
 ```
 
-We see that this looks like a normal distribution with a lot of tweets having the score of 0.Now let us look at whether we can successfully model based on the sentiment scores. We will first plot for all the stocks and then focus on 3 selective stocks
+We see that this looks like a normal distribution with a lot of tweets having the score of 0.Now let us look at whether linear regression can successfully model based on the sentiment scores. We will first plot for all the stocks and then focus on 3 selective stocks
 
 ```{r ,echo=FALSE, message=FALSE, fig.width=9}
 # Model volume ~ sentiment score
@@ -342,7 +349,7 @@ colnames(results_volume)[6]<- 'pval'
 ggplot(results_volume, aes(symbol, pval, color=sector)) + 
   geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Volume~Sentiment-Score model") +
+  ggtitle("Volume~Sentiment-Score model For Daily Data") +
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
   theme(legend.position="bottom")
 
@@ -358,7 +365,7 @@ colnames(results_price)[6]<- 'pval'
 ggplot(results_price, aes(symbol, pval, color=sector)) + 
   geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Closing Price~Sentiment Score model") +
+  ggtitle("Closing Price~Sentiment Score model For Daily Data") +
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
   theme(legend.position="bottom")
 
@@ -402,7 +409,7 @@ p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>%
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
-                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
+                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized Daily Data")
 
 ```
 

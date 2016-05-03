@@ -32,7 +32,7 @@ cities <- c(filteredList$result)
 # Call the google api to get the latitude, longitudes
 latLong <- geocode(cities)
 
-png("/code/CSCIE-107/E107project/pulkit/userpresence.png", width=12, height=8, units="in", res=300)
+png("/code/CSCIE-107/E107project/pulkit/userpresence.png", width=10, height=6, units="in", res=300)
 map("world", fill=TRUE, col="white", bg="lightblue", ylim=c(-60, 90), mar=c(0,0,0,0))
 points(latLong$lon,latLong$lat, col="red", pch=16)
 title("Tweets User distribution")
@@ -76,7 +76,7 @@ mergedDataset <- merge(all_states, joined_df, by="region")
 # remove district of columbia from the dataset
 mergedDataset <- mergedDataset[mergedDataset$region!="district of columbia",]
 
-png("/code/CSCIE-107/E107project/pulkit/stateuserdistribution.png", width=12, height=8, units="in", res=300)
+png("/code/CSCIE-107/E107project/pulkit/stateuserdistribution.png", width=10, height=6, units="in", res=300)
 
 ggplot(data=mergedDataset, aes(x=long, y=lat, group=group, fill=count)) + 
   scale_fill_gradientn("",colours=brewer.pal(15,"YlOrRd"))+

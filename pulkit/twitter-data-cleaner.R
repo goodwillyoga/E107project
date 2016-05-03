@@ -16,7 +16,7 @@ createDirectoryTree <- function(toFileName) {
   todir <- dirname(toFileName)
   if (!isTRUE(file.info(todir)$isdir)) dir.create(todir, recursive=TRUE)
 }
-
+# Function that iterates over each file line by line. Converts the line to a json and the reads the information from the json object
 read_extract <- function(filename) {
   cat(" Processing file",filename)
   con  <- gzfile(filename, open = "r")
@@ -94,8 +94,9 @@ read_extract <- function(filename) {
     
   } 
   
+  # close the file connection
   close(con)
-  
+  # Create a dataset for tweets, users, tweet_hashtags and tweet_symbols
   tweets<-data.frame(id_str,text,reply_to,reply_usr_id,user_id,time_stamp,retweeted,retweeted_count,retweeted_from_id,retweeted_from_count)
   users <- data.frame(user_id,user_name,user_loc,user_follower_count,user_friend_count,user_profile_image)
   
