@@ -58,7 +58,7 @@ dailyStockData <- stocks_est %>%
   mutate(day = mdy(lastTradeDate)) %>% 
   group_by(day,symbol) %>% 
   filter(volume == max(volume)) %>% 
-  mutate(prcChange = open - price) %>% mutate(absPrcChange = abs(prcChange))
+  mutate(prcChange = open - price) # Add a column for price Change
 
 # Create a dataset with hourly price change
 hourly_avg_stockPriceChng <- stocks_est %>% 
@@ -78,6 +78,9 @@ hist(hourly_avg_stockPriceChng$prcChange)
 # Make a hourly dataset
 hourly_stockData <- inner_join(hourly_avg_stockPriceChng,hourly_volumeChng) %>% select(symbol,price,volume,sector,date_timelb,day_hr,day,hourlyVolumeChng,prcChange,avgPrice)
 
+# stocks_est is just the rawdata, 
+# hourly_stockData contains the percentChange in hourly avg Price, percent change in hourly volume and hourly avg Price
+# dailyStockData contains the daily volume, closing price and price change
 save(stocks_est, hourly_stockData, dailyStockData,  file = "/code/CSCIE-107/E107project/pulkit/processed-stocks.RData")
 
 
