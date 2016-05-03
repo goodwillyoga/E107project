@@ -4,6 +4,9 @@ output: html_document
 ---
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+if (!require("knitr")) {
+   install.packages("knitr", dependencies = TRUE)
+   }
 if (!require("dplyr")) {
    install.packages("dplyr", dependencies = TRUE)
    }
@@ -34,6 +37,7 @@ if (!require("gplots")) {
 if (!require("portfolio")) {
   install.packages("portfolio")
 }
+library(knitr)
 library(dplyr)
 library(readr)
 library(stringr)
@@ -205,16 +209,17 @@ freqwords <- rbind(freqwords, words %>% filter(sentiment=='negative') %>% top_n(
   
   ![StockTwits Workflow](https://github.com/goodwillyoga/E107project/blob/master/pooja/StockTwitsProcess.png?raw=true)
   
-In the [stock-twits_multiple.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits_multiple.R) file we make an API call, to StockTwits for a given symbol every 15 minutes for 3 weeks, that returns response in JSON. We use rjson library to extract the id, message, timestamp and symbol from the JSON response. 
+In the [stock-twits_multiple.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits_multiple.R) file we make an API call, to StockTwits for a given symbol every 15 minutes for 3 weeks, that returns response in JSON. We use _**rjson**_ library to extract the id, message, timestamp and symbol from the JSON response and converted the UTC time to EST time as shown below. 
 
-TODO PUT THE SAMPLE HERE
+```{r}
+head(data, n=5) %>% kable
+```
 
 Next we aggregate collected data in  [stock-twits-processing.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-processing.R) file and cleanup duplicate messages. We then calculate the sentiment score for each tweet( or message) by taking the counts of postive terms minus the counts of negative terms in a tweet as explained in a paper [here](http://www.r-bloggers.com/an-example-on-sentiment-analysis-with-r/). We used [AFINN](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010) word list and English Opinion Lexicon positive and negative word lists to compare the words in a tweet to determine if it is a postiver term or a negative term to calculate the sentiment score. 
 
-In the final modelling step in [stock-twits-analysis.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-analysis.R) file, we combine the StockTwits data and [Yahoo! finance data](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) to model the stock price based on the tweet counts and sentiment scores.
+In the final modelling step in [stock-twits-analysis.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-analysis.R) file, we combine the StockTwits data and [Yahoo! finance data](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) to model the stock price based on the tweet counts and sentiment scores. (The Yahoo finance data is in the EST timezone and we converted the StockTwits timestanp into EST timestamp also.)
 
 Next we proceed with exploratory data analysis. 
-
 
 #### Exploratory Data Analysis for Stock Twits Data
 
