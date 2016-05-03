@@ -1,5 +1,10 @@
 ---
 title: "Statistical Analysis of Stock Volatility"
+subtitle: "Introduction to Data Science E109 Spring 2016"
+author: 
+- Mohan Patname
+- Pulkit Bhanot
+- Pooja Singh
 date: "April 23, 2016"
 output: html_document
 ---
