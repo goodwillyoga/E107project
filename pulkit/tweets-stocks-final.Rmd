@@ -21,7 +21,7 @@ library(portfolio)
 
 ```
 #Background and Motivation
-Twitter is a widely used online social media. Here we analyze 70 stocks across different industries and apply a linear regression to predict stock market indicators, using Twitter data. We find that there are a few stocks out of the choosed stocks for which the 3 stock predictors can be modelled based on the count of tweets. We then focus specifically on the 3 stocks high beta (GS - Financials), med beta (IBM - Info Tech) and low beta (EIX - utilities) to see if this model can successfuly be used to predict market indicators. We do the above analysis both for daily and hourly data. Then we move towards analyzing the sentiments from the stocks and see if we can model the the predictors with the average sentiment score on the hourly basis. Coming towards the end we try to visualize the pattern between the daily sentiment score with the closing prices and see that sentiments follow the market movements.
+Twitter is a widely used online social media. Here we analyze 70 stocks across different industries and apply a linear regression to predict stock market indicators, using Twitter data. During the time window between April 6th to April 29th we were able to collect 339345 tweets. We find that there are a few stocks out of the choosed stocks for which the 3 stock predictors can be modelled based on the count of tweets. We then focus specifically on the 3 stocks high beta (GS - Financials), med beta (IBM - Info Tech) and low beta (EIX - utilities) to see if this model can successfuly be used to predict market indicators. We do the above analysis both for daily and hourly data. Then we move towards analyzing the sentiments from the stocks and see if we can model the the predictors with the average sentiment score on the hourly basis. Coming towards the end we try to visualize the pattern between the daily sentiment score with the closing prices and see that sentiments follow the market movements.
 
 ### Data Normalization
 We normalize each time series to z-scores on the basis of a local mean and standard deviation to provide a common scale for comparison of our predictors and stock market indicators.
@@ -31,16 +31,13 @@ $$Z_({x_{i}}) = \frac{x_{i} - \mu(X)}{\sigma(X)}$$
 ## Data Extraction
 We wanted to gather tweets from [Twitter](https://twitter.com/) and stock data from [Yahoo! Finance](http://finance.yahoo.com/). Here we try to explain briefly the steps done for extraction/processing of tweets and stocks data.
 
-![Processing Stages](/code/CSCIE-107/E107project/pulkit/Preprocessing-stages.png)
+![Processing Stages](https://github.com/goodwillyoga/E107project/raw/master/pulkit/Preprocessing-stages.png)
 
 ### Twitter Data Extraction and Processing
 There are some limitations on the number of requests that can be made to the twitter REST api. So we decided to use the [java streaming api](https://github.com/twitter/hbc) to capture the live tweets and record them into a file twitter.json. We called this component [extractors](https://github.com/goodwillyoga/E107project/tree/master/pulkit/extractors). The file twitter.json was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [twitter-data-cleaner.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter-data-cleaner.R) is run on the files. Since this extraction process is very time consuming so this script was added the capability to perform the extraction in append mode, wherein the contents of a new file are appended to an already extracted dataset from previously processed files. The script creates a .RData file [twitter.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter.RData) with 4 datasets tweets, users, hashtags and symbols. For further analysis we will be using the tweets and symbols dataset. These datasets are read by [tweeter-score-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/tweeter-score-compute.R) which mutate the time of each tweets to America/New_York timezone. It computes the sentiment score for each tweet using the [Opinion Lexicon](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html), which has a list of 6800 positive/negative words. It stores the sentiment scores in a dataset scores. It also computes 2 additional datasets daily_tweet_score and hourly_tweet_score these datasets contain the normalized avg sentiment scores. It also creates a [word cloud](https://github.com/goodwillyoga/E107project/blob/master/pulkit/wordCloud.png) of the frequently used words in these tweets. It writes the 4 datasets into the file [processed-tweets.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/processed-tweets.RData).
 
 ### Yahoo Finance Data Extraction and Processing
 We wrote a rscript [yahoo-finance-data-extractor.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-extractor.R), that extracts the prices of the choosen 70 stocks and appends it into a csv stocks.csv. The file stocks.csv was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [yahoo-finance-data-processor.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-processor.R) is run on these files which combines the records read from the current file with the already processed records and writes it into the file [yahoo-finance.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData). This [yahoo-finance.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) is then read by [stocks-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/stocks-compute.R) which creates 3 datasets stocks_est, hourly_stockData and dailyStockData. 
-
-### Basic Analysis
-We started collecting the data from 6th of April and collected till 29th April. Let us start with looking at the amount of tweets that we have collected for each symbol on log scale  
 
 ```{r, echo=FALSE, message=FALSE}
 # Following is the list of all the stocks which we have downloaded the tweets and the stocks from Yahoo finance
@@ -55,60 +52,83 @@ ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
 ```
 
 Load the Processed tweets and stocks data from github
-```{r tweets}
+```{r load tweets}
 #load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/processed-tweets.RData"))
 load("/code/CSCIE-107/E107project/pulkit/processed-tweets.RData")
 ```
-```{r stocks}
+```{r load stocks}
 #load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/processed-stocks.RData"))
 load("/code/CSCIE-107/E107project/pulkit/processed-stocks.RData")
 ```
-```{r}
-# Create helper functions
+```{r, echo=FALSE, message=FALSE}
+# Create helper function to normalize the data
 normalize<-function(m){
   (m - mean(m))/sd(m)
 }
 ```
+### Exploratory Data Analysis
+We started collecting the data from 6th of April and collected till 29th April. Let us start with looking at the amount of tweets that we have collected for each symbol on log scale  
+
 Let us start looking at distribution of tweets per symbol
-```{r,echo=FALSE, message=FALSE}
-tweets_est %>% group_by(symbol) %>% 
-  summarise(count = n()) %>% inner_join(ticker_sector) %>%
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=6}
+
+tweets_est %>% group_by(symbol) %>% # group on symbol
+  summarise(count = n()) %>% inner_join(ticker_sector) %>% # count number of rows for each symbol
   ggplot(aes(symbol, log(count), color=sector)) + geom_point() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   ggtitle('Distribution of Tweets per Symbol') + xlab('Symbols')+ylab('Count(log scale) ')+
   theme(legend.position="bottom")
 ```
 
-Look at distribution of tweets perr day
-```{r,echo=FALSE, message=FALSE}
-tweets_est %>% group_by(dt) %>% 
-  summarise(count = n()) %>%
-  ggplot(aes(dt, log(count))) + geom_point() + 
+We can see that in general technology companies tend to have much more number of tweets as compared to companies in other sectors e.g AMZN, FB, GOOG etc
+
+Look at distribution of tweets per day
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=6}
+tweets_est %>% group_by(dt) %>% # group on Date
+  summarise(count = n())  %>% mutate(wday = wday(dt)) %>% # count number of rows for each date
+  ggplot(aes(dt, log(count), color=wday)) + geom_point() +
+  scale_colour_gradientn(colours=rainbow(7)) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   theme(legend.position="bottom")+
   ggtitle('Distribution of Tweets per Day') + xlab('Dates')+ylab('Count(log scale) ')
 ```
 
+Sunday(Day 1) is color coded as Red, we can see that Saturday's have the least number of tweets followed by Sunday's. and in the middle of the week (Tuesday/Wednessday) we have the maximum number of tweets.
+
 Let us look at daily closing prices/Volumes for the 3 choosen stocks
-```{r,echo=FALSE, message=FALSE}
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=6}
+# Plot variation of closing price for the 3 chosen stocks
 dailyStockData %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot(aes(day, price)) + geom_line(aes(color=symbol)) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  ggtitle('Varition of Daily closing Price') + xlab('Dates')+ylab('Closing Price ') + facet_wrap(~symbol,scales = "free")
+  theme(legend.position="bottom")+
+  ggtitle('Varition in Daily Closing Price') + xlab('Dates')+ylab('Closing Price ') + facet_wrap(~symbol,scales = "free")
+
+# Plot variation of daily volume for the 3 choosen stocks
 dailyStockData %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
-  ggplot(aes(day, log(volume))) + geom_line(aes(color=symbol)) + 
+  ggplot(aes(day, volume)) + geom_line(aes(color=symbol)) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   theme(legend.position="bottom")+
-  ggtitle('Varition of Volume') + xlab('Dates')+ylab('Daily Volume ') + facet_wrap(~symbol,scales = "free")
+  ggtitle('Variation of Daily Trading Volume') + xlab('Dates')+ylab('Daily Volume ') + facet_wrap(~symbol,scales = "free")
 ```
+
+We can see that there is some variation in the daily traded volumes and the prices.
+
 ```{r,echo=FALSE, message=FALSE}
 #We know that Stock markets are closed on weekends, let us compute the trading days so that we can focus on the trading days only
 tradingDays <- stocks_est %>% mutate(day = mdy(lastTradeDate)) %>% ungroup() %>% select(day) %>% distinct(day)
 ```
-We will start with modeling of daily stock/tweets data and try to do a linear regression to find relation between volume, closing Price and Daily Price Change with number of tweets. We will represent this once for all the shares and then selectively for 3 choosen stocks to see if we can find if this model 
+
+### Applying Linear Regression
+
+We will start with modeling of daily stock/tweets data and try to do a linear regression to find relation between volume, closing Price and Daily Price Change with number of tweets. We will plot this once for all the stocks and then selectively for 3 choosen stocks. The regression model is
+
+$$ Y_t = \alpha + \beta X_t + \varepsilon_t, $$
+
+Yt represents a stock indicator for day t , Xt represents the related Twitter predictor on day t, α is the intercept, β is the slope, and εt is a random error term for day t.
 
 
-```{r,echo=FALSE, message=FALSE}
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=6}
 # Normalized tweets count data is stored in daily_tweet_score, Daily Stock data is present in dailyStockData, 
 #let us normalize the volume, closing price and Daily Price change and then join it daily_tweet_score
 dailyStockTweetNormalized <- dailyStockData %>% 
@@ -118,59 +138,97 @@ dailyStockTweetNormalized <- dailyStockData %>%
   mutate_each(funs(normalize),prcChange) %>% 
   inner_join(daily_tweet_score, by=c("symbol"="symbol", "day"="dt")) %>% select(symbol,price,volume,open,sector,date_timelb,day,prcChange,count,avgScore)
 
+# Fit a model
 fits <- dailyStockTweetNormalized %>%
   group_by(symbol) %>%
   do(mod = lm(volume ~ count, data = .))
 
+# Filter out rows where term is count
 results_volume_count <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector)
 colnames(results_volume_count)[6]<- 'pval'
 
-# Plot for all stocks
-ggplot(results_volume_count, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~count model for all Stocks") +
+# Plot for all stocks and highlight the stocks with pvals <.05
+ggplot(results_volume_count, aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("Volume~Count model for Daily data") + xlab("Symbols") + ylab("Pvalues")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume_count,  pval <.05 )) +
   theme(legend.position="bottom")
+```
+
+From the above we can see that there a couple of stocks with p-values <.05 for the volume~count model. Let us model Closing price with Number of tweets for each stock
+
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=6}
 
 # Let us model closing price vs count for each stock
 fits <- dailyStockTweetNormalized %>%
   group_by(symbol) %>%
   do(mod = lm(price ~ count, data = .))
 
-results_price_count <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector)
+# Filter out rows where term is count
+results_price_count <- tidy(fits,mod, conf.int = TRUE) %>% 
+  filter(term=='count') %>% 
+  inner_join(ticker_sector)
 colnames(results_price_count)[6]<- 'pval'
 
 # Plot for all stocks
-ggplot(results_price_count, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Closing Price~count model for all Stocks") +
+ggplot(results_price_count, aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("Closing Price~count model") + xlab("Symbols") + ylab("Pvalues")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price_count,  pval <.05 )) +
   theme(legend.position="bottom")
 
+```
+
+Let us model Daily Price Change with Number of tweets for each stock 
+
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=6}
 
 # Let us model Price Change vs count for all stocks
 fits <- dailyStockTweetNormalized %>%
   group_by(symbol) %>%
   do(mod = lm(prcChange ~ count, data = .))
 
-results_prcChange_count <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='count') %>% inner_join(ticker_sector)
+results_prcChange_count <- tidy(fits,mod, conf.int = TRUE) %>% 
+  filter(term=='count') %>% inner_join(ticker_sector)
 colnames(results_prcChange_count)[6]<- 'pval'
 
 # Plot for all stocks
-ggplot(results_prcChange_count, aes(symbol, pval, color=sector)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily Price Change~count model for all Stocks") +
+ggplot(results_prcChange_count, aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("Daily Price Change~count model for all Stocks") + xlab("Symbols") + ylab("Pvalues") + 
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange_count,  pval <.05 )) +
   theme(legend.position="bottom")
+```
+
+From the above 3 plots we can see that we can model Daily volume, Closing Price and Daily Price change for AVP, BSX, XRX, PSX, GILD with number of tweets for these shares with the p-values <.05. Let us look at the selected 3 stocks and try to see if the above linear regression explains something about them.
+
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=3}
+
+# Let us plot specific for the 3 stocks 
+p1<- results_volume_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  ggplot( aes(symbol, pval, color=symbol)) + geom_point() + 
+  geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("Pvalues") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~count model")+ theme(legend.position="bottom")
+
+p2 <- results_price_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  ggplot( aes(symbol,pval, color=symbol))+geom_point()+
+  geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Closing Price~count model")+ theme(legend.position="bottom")
+
+p3<- results_prcChange_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols)  %>% 
+  ggplot( aes(symbol,pval, color=symbol))+geom_point()+
+  geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~count model")+ theme(legend.position="bottom")
 
 # Let us do regression plots for the 3 stocks
 dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(count,volume))+geom_point()+geom_smooth() +facet_wrap(~symbol)
-# Let us plot specific for the 3 stocks 
-p1<- results_volume_count %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(symbol, pval, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("volume~count model")+ theme(legend.position="bottom")
 
-p2 <- results_price_count %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Closing Price~count model")+ theme(legend.position="bottom")
-
-p3<- results_prcChange_count %>% filter(symbol %in% selectively_analyzed_symbols)  %>% ggplot( aes(symbol,pval, color=symbol))+geom_point()+geom_hline(yintercept = .05, color='red')+ 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("Price Change~count model")+ theme(legend.position="bottom")
 
 dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(count,prcChange))+geom_point()+geom_smooth() +facet_wrap(~symbol)
 
