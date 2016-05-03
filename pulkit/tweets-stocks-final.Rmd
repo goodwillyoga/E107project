@@ -309,9 +309,6 @@ dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %
 # Do regression plots for the 3 stocks based on Daily Price change~count
 dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(count,prcChange))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
-# Cleanup all the objects created in this block
-rm(p1, p2, p3, results_prcChange_count, results_price_count, results_volume_count,fits)
-
 ```
 
 The plots kind of show us why GS Daily volume and Price change can be represented by a linear regression model.
@@ -400,8 +397,6 @@ grid.arrange(arrangeGrob(p1+
                            theme(legend.position="none"), p3+ 
                            theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
 
-rm(p1, p2, p3, results_prcChange, results_price, results_volume,fits)
-
 ```
 
 The p-values for none of the 3 are <.05 so we can say that this linear model is not a good fit. We also had hourly sentiment scores per stock, let us try to model the 3 elements for stocks on the hourly sentiment score and visualize.
@@ -465,8 +460,6 @@ ggplot(results_prcChange, aes(symbol, pval, color=sector)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Hourly Price Change~Sentiment Score model") +
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange,  pval <.05 )) +
   theme(legend.position="bottom")
-
-rm(p1, p2, p3, results_prcChange, results_price, results_volume,fits)
 
 ```
 
