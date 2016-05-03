@@ -31,7 +31,7 @@ $$\rho_{xy} = correlation coefficient between x and y$$
 
 **Standard Deviation**: The standard deviation is another statistical measure of a stock’s volatility. It indicates the tendency of the returns to rise or fall drastically in a short period of time. A security that is volatile is also considered higher risk because its performance may change quickly in either direction at any moment. Such volatile stocks typically have a high standard deviation.
 
-**Twitter Volume**: <TODO>
+**Twitter Volume**: We collected data from April 6th to April 29th, there are 339345 tweets, Its approximately 120MBytes of compressed data which we process incrementally.
 
 **Twitter Sentiment Score**: <TODO>
 
