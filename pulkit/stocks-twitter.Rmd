@@ -7,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## This file is only used for preliminary analysis. Final results can be accessed in tweets-stocks-final.Rmd
 
 ```{r }
 library(dplyr)
@@ -322,14 +322,6 @@ hourly_stocks_score %>% mutate(week = isoweek(day_hr)) %>%
   ggplot()+geom_line(aes(day_hr,avgScore, color="Sentiment Score"))+
   geom_line(aes(day_hr,avgPrice, color="Price")) + facet_wrap(~symbol+week,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-#### Cross co-rrelation of sentiment score and stock prices
-for(stockSymbol in selectively_analyzed_symbols){
-  stockHourlyData <- hourly_stocks_score %>% filter(symbol == stockSymbol)
-  tweetsHourlyScore <- hourlynormalized_scores %>% filter(symbol == stockSymbol)
-  ccf(tweetsHourlyScore$avgScore,stockHourlyData$avgPrice)
-}
-#ccf(hourlynormalized_scores$avgScore,hourly_stocks_score$avgPrice, ylab = "cross-correlation")
 
 
 ```

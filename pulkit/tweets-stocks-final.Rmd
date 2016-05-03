@@ -319,7 +319,13 @@ Let us try to model volume, closing Price and Daily Price Change with sentiment 
 
 ![Word Cloud](https://github.com/goodwillyoga/E107project/raw/master/pulkit/wordCloud.png)
 
-Now let us look at the whether we can successfully model based on the sentiment scores. We will first plot for all the stocks and then focus on 3 selective stocks
+Let us also look at the distribution of Scores
+
+```{r ,echo=FALSE, message=FALSE, fig.width=9}
+qplot(scores$score)
+```
+
+We see that this looks like a normal distribution with a lot of tweets having the score of 0.Now let us look at whether we can successfully model based on the sentiment scores. We will first plot for all the stocks and then focus on 3 selective stocks
 
 ```{r ,echo=FALSE, message=FALSE, fig.width=9}
 # Model volume ~ sentiment score
@@ -477,4 +483,11 @@ dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %
 
 ```
 
-From the above plot we can clearly see that the sentimnet scores appers to follow the price movements of the stocks. 
+From the above plot we can clearly see that stock price movements are more strongly predictive of twitter sentiment movements. 
+
+## Observations and Conclusions
+Some of the takeaways that we can derive based on the data
+1) Data shows that there are more number of tweets for technology sector companies then compared to other sectors.
+2) We can successively model predictore for Daily volumes, Closing prices and Daily Price variations for some of the stocks like AVP, BSX, XRX, PSX, GILD just based on the number of tweets using Linear Regression. 
+3) Linear regression model based on sentiment scores with Daily volumes, Closing prices and Daily Price are not good predictors for these models as p-values >.05.
+4) We see a clear follower relationship between Sentiment scores and Stock price movements. Analyzing the trends using Cross correlation may provide some more insights into this. 
