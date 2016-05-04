@@ -1099,7 +1099,9 @@ p1 <- results_price_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, co
   theme(axis.title.x=element_blank(), 
         axis.text.x=element_blank(), 
         axis.ticks=element_blank(),
-        axis.title.y=element_blank()) + scale_y_continuous(limits = c(0, .15))+
+        axis.title.y=element_blank(),
+        plot.title=element_text(size = rel(0.75))) + 
+  scale_y_continuous(limits = c(0, .15))+
   ggtitle("ClosingPrice~Count")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price_count,  pval <.05 )) +
   theme(legend.position="bottom")
@@ -1119,8 +1121,10 @@ p2<- results_volume_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, co
   theme(axis.title.x=element_blank(), 
         axis.text.x=element_blank(), 
         axis.ticks=element_blank(),
-        axis.text.y=element_blank(),
-        axis.title.y=element_blank()) + scale_y_continuous(limits = c(0, .15))+
+        axis.text.y=element_blank(), 
+        axis.title.y=element_blank(),
+        plot.title=element_text(size = rel(0.75))) +
+  scale_y_continuous(limits = c(0, .15))+
   ggtitle("Volume~Count") + xlab("Symbols") + ylab("Pvalues")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume_count,  pval <.05 )) +
   theme(legend.position="bottom")
@@ -1143,8 +1147,10 @@ p3<- results_prcChange_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval,
   theme(axis.title.x=element_blank(), 
         axis.text.x=element_blank(), 
         axis.ticks=element_blank(),
-        axis.title.y=element_blank(),
-        axis.text.y=element_blank()) + scale_y_continuous(limits = c(0, .15))+ 
+        axis.title.y=element_blank(),  
+        axis.text.y=element_blank(),
+        plot.title=element_text(size = rel(0.75))) +
+  scale_y_continuous(limits = c(0, .15))+ 
   ggtitle("PriceChange~Count") + xlab("Symbols") + ylab("Pvalues") + 
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange_count,  pval <.05 )) +
   theme(legend.position="bottom")
@@ -1169,19 +1175,31 @@ From the above 3 plots we can see that we can model Daily volume, Closing Price 
 p1 <- results_price_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+ scale_y_continuous(limits = c(0, 1))+
-  geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
+  geom_hline(yintercept = .05, color='red') + 
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Symbols") + ylab("Pvalues") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("ClosingPrc~Count")+ theme(legend.position="bottom")
 
 p2<- results_volume_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot( aes(symbol, pval, color=symbol)) + geom_point() + scale_y_continuous(limits = c(0, 1))+ 
-  geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("Pvalues") +
+  geom_hline(yintercept = .05, color = 'red') + 
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Symbols") + ylab("Pvalues") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Count")+ theme(legend.position="bottom")
 
 p3<- results_prcChange_count %>% 
   filter(symbol %in% selectively_analyzed_symbols)  %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+ scale_y_continuous(limits = c(0, 1))+
-  geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
+  geom_hline(yintercept = .05, color='red') + 
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Symbols") + ylab("Pvalues") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("DailyPrcChn~Count")+ theme(legend.position="bottom")
 
 grid.arrange(arrangeGrob(p1+ 
@@ -1200,6 +1218,9 @@ p1 <-results_price_count %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
   geom_point(size = 2) + ggtitle("ClosingPrc~Count")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
@@ -1207,6 +1228,9 @@ p2 <- results_volume_count %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
   geom_point(size = 2) + ggtitle("Volume~Count")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
@@ -1214,6 +1238,9 @@ p3 <-results_prcChange_count %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
   geom_point(size = 2) + ggtitle("DailyPrcChn~Count")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
@@ -1231,20 +1258,35 @@ From the above we can see that we have significant result for Volume ~ Tweet Cou
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=3}
 # Do regression plots for the 3 stocks based on volume~count
-dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price)) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Tweet Counts") + ylab("Price") +
+  geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on volume~count
-dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_volume))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_volume)) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Tweet Counts") + ylab("Volume") +
+  geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on Daily Price change~count
-dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price_change))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price_change))+
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Tweet Conts") + ylab("Price Change") +
+  geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 ```
 
 The plots kind of show that GS Daily volume vs. tweet counts can be represented by a linear regression model.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=3}
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = lubridate::isoweek(mdy(day))) %>% 
-  ggplot()+geom_line(aes(mdy(day),scale_tweet_counts, color="Sentiment Score"))+
+  ggplot()+geom_line(aes(mdy(day),scale_tweet_counts, color="Sentiment Score")) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Day") + ylab("Price/Tweet Counts") +
   geom_line(aes(mdy(day),scale_price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 ```
@@ -1273,7 +1315,8 @@ p1 <- results_price %>% filter(pval <.5) %>% ggplot( aes(symbol, pval, color=sec
   theme(axis.title.x=element_blank(), 
         axis.text.x=element_blank(), 
         axis.ticks=element_blank(),
-        axis.title.y=element_blank()) + 
+        axis.title.y=element_blank(),        
+        plot.title=element_text(size = rel(0.75))) + 
   ggtitle("ClosingPrc~Score") + scale_y_continuous(limits = c(0, .5))+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
   theme(legend.position="bottom")
@@ -1294,7 +1337,8 @@ p2 <- results_volume%>% filter(pval <.5) %>% ggplot( aes(symbol, pval, color=sec
         axis.text.x=element_blank(), 
         axis.ticks=element_blank(),
         axis.title.y=element_blank(),
-        axis.text.y=element_blank()) +
+        axis.text.y=element_blank(),        
+        plot.title=element_text(size = rel(0.75))) +
   geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") +
   ggtitle("Volume~Score") + scale_y_continuous(limits = c(0, .5))+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
@@ -1315,7 +1359,8 @@ p3<- results_prcChange%>% filter(pval <.5) %>% ggplot(aes(symbol, pval, color=se
         axis.text.x=element_blank(), 
         axis.ticks=element_blank(),
         axis.title.y=element_blank(),
-        axis.text.y=element_blank()) +
+        axis.text.y=element_blank(),        
+        plot.title=element_text(size = rel(0.75))) +
   ggtitle("DailyPrcChn~Score") + scale_y_continuous(limits = c(0, .5))+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange,  pval <.05 )) +
   theme(legend.position="bottom")
@@ -1340,19 +1385,28 @@ From the above plots we can see that for stocks AAPL, TWTR, IBM and WY, can fit 
 p1 <- results_price %>% filter(symbol %in% selectively_analyzed_symbols)  %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+ xlab("Symbols") + ylab("P-values") +
   geom_hline(yintercept = .05, color='red') + 
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("ClosingPrc~Score")+ theme(legend.position="bottom")
 
 
 p2<- results_volume %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
   ggplot( aes(symbol, pval, color=symbol)) + geom_point() + xlab("Symbols") + ylab("P-values") +
   geom_hline(yintercept = .05, color = 'red') + 
+  theme(plot.title=element_text(size = rel(0.75))) + 
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Score")+ theme(legend.position="bottom")
 
 
 p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>% 
   ggplot( aes(symbol,pval, color=symbol))+geom_point()+ xlab("Symbols") + ylab("P-values") +
   geom_hline(yintercept = .05, color='red') + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("DailyPrcChange~Score")+ theme(legend.position="bottom")
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("DailyPrcChange~Score")+ theme(legend.position="bottom")
 
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
@@ -1364,6 +1418,10 @@ p1 <-results_price %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   geom_point(size = 2) + ggtitle("ClosingPrc~Score")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
@@ -1371,6 +1429,10 @@ p2 <- results_volume %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   geom_point(size = 2) + ggtitle("Volume~Score")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
@@ -1378,6 +1440,10 @@ p3 <-results_prcChange %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75))) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   geom_point(size = 2) + ggtitle("DailyPrcChn~Score")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
@@ -1394,21 +1460,36 @@ grid.draw(legend)
 From the above we can see that we have significant result for Closing Price ~ Sentiment Score for IBM as p-value <.05 and also confidence intervals do not include 0, so the relationship is significant. Let us try to look at the regression plots as well.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=3}
-# Do regression plots for the 3 stocks based on volume~score
-dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+# Do regression plots for the 3 stocks based on price~score
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price))+
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Sentiment Score") + ylab("Price") +
+  geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on volume~score
-dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_volume))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_volume))+
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Sentiment Score") + ylab("Volume") +
+  geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on Daily Price change~score
-dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price_change))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price_change))+
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Sentiment Score") + ylab("Price Change") +
+  geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 ```
 
 The plots shows that IBM Closing Price vs. Sentiment Score can be represented by a linear regression model.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=3}
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = lubridate::isoweek(mdy(day))) %>% 
-  ggplot()+geom_line(aes(mdy(day),scale_avg_score, color="Sentiment Score"))+
+  ggplot()+geom_line(aes(mdy(day),scale_avg_score, color="Sentiment Score")) +
+  theme(axis.title.x = element_text(size = rel(0.75))) +
+  theme(axis.title.y = element_text(size = rel(0.75))) +
+  xlab("Day") + ylab("Price/Sentiment Score") +
   geom_line(aes(mdy(day),scale_price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 ```
