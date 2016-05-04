@@ -957,20 +957,26 @@ data <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107proj
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Following is the list of all the stocks which we have downloaded the tweets and the stocks from Yahoo finance
+tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR")
+# Sectors associate with each stock
+sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
+             "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology")
+
+selectively_analyzed_symbols <- c("GS","IBM","EIX")
+ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
+
+## ----load stocks, messages=FALSE, warning=FALSE, echo=FALSE--------------
+#Load YAHOO finance data
+load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/yahoo-finance.RData"))
 
 colnames(data) <- c('id','message','createdat','symbol','sentiment_score')
 
 #Convert to UTC to EST time zone 
 data <- data %>% mutate(utc.time = as.POSIXct(data$createdat, tz="UTC")) %>%
-                 mutate(est.time = format(utc.time, tz="America/New_York")) %>%
-                 mutate(est.date = substr(as.character(format(strftime(est.time, '%m/%d/%Y'))), 2,10)) %>%
-                 mutate(est.date.minus.two = substr(as.character(format(lubridate::mdy(est.date)-2, '%m/%d/%Y')), 2,10)) %>%
-                 mutate(est.hour = paste(est.date, lubridate::hour(est.time)))
-
-#Percent change function
-pcchange=function(x,lag=1) {
-  c(diff(x,lag))/x
-}
+  mutate(est.time = format(utc.time, tz="America/New_York")) %>%
+  mutate(est.date = substr(as.character(format(strftime(est.time, '%m/%d/%Y'))), 2,10)) %>%
+  mutate(est.hour = paste(est.date, lubridate::hour(est.time)))
 
 #Get hour from time function
 get_24hour <- function(x){
@@ -986,117 +992,37 @@ get_24hour <- function(x){
   return(ret)
 }
 
-# Scale function
-scale<-function(m){
+normalize<-function(m){
   (m - mean(m))/sd(m)
 }
 
-#Average sentiment score by hour
-avg_sentiment_score_by_hour <- data %>% 
-            group_by(symbol, dayhour = est.hour) %>%
-            summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
-            mutate(pchange_tweet_counts = pcchange(tweet_counts)) %>%
-            mutate(pchange_avg_score = pcchange(avg_score)) %>%
-            mutate(pchange_avg_score = ifelse(is.na(pchange_avg_score) | is.infinite(pchange_avg_score) |is.nan(pchange_avg_score), 0, pchange_avg_score)) %>%
-            ungroup() %>%
-            group_by(symbol) %>%
-            mutate(scale_pchange_avg_score = scale(pchange_avg_score)) %>% 
-            mutate(scale_pchange_tweet_counts = scale(pchange_tweet_counts)) %>% 
-            mutate(scale_pchange_avg_score = ifelse(is.na(scale_pchange_avg_score) | is.infinite(scale_pchange_avg_score) |is.nan(scale_pchange_avg_score), 0, scale_pchange_avg_score)) %>%
-            ungroup() %>%
-            select(symbol, dayhour, avg_score, tweet_counts, scale_pchange_avg_score, scale_pchange_tweet_counts) %>%
-            unique() 
-
 #Average sentiment score by day
 avg_sentiment_score_by_day <- data %>% 
-            group_by(symbol, day=est.date) %>%
-            summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
-            mutate(pchange_tweet_counts = pcchange(tweet_counts)) %>%
-            mutate(pchange_avg_score = pcchange(avg_score)) %>%
-            mutate(pchange_avg_score = ifelse(is.na(pchange_avg_score) | is.infinite(pchange_avg_score) |is.nan(pchange_avg_score), 0, pchange_avg_score)) %>%
-            ungroup() %>%
-            group_by(symbol) %>%
-            mutate(scale_pchange_avg_score = scale(pchange_avg_score)) %>% 
-            mutate(scale_pchange_tweet_counts = scale(pchange_tweet_counts)) %>% 
-            mutate(scale_pchange_avg_score = ifelse(is.na(scale_pchange_avg_score) | is.infinite(scale_pchange_avg_score) |is.nan(scale_pchange_avg_score), 0, scale_pchange_avg_score)) %>%
-            ungroup() %>%
-            select(symbol, day, avg_score, tweet_counts, scale_pchange_avg_score, scale_pchange_tweet_counts) %>%
-            unique() 
+  group_by(symbol, day=est.date) %>%
+  summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
+  ungroup() %>%
+  group_by(symbol) %>%
+  mutate(scale_avg_score = normalize(avg_score)) %>% 
+  mutate(scale_tweet_counts = normalize(tweet_counts)) %>% 
+  select(symbol, day, avg_score, tweet_counts, scale_avg_score, scale_tweet_counts) %>%
+  unique() 
 
-#Average sentiment score for previous day
-avg_sentiment_score_prev_two_day <- data %>% 
-            group_by(symbol, day=est.date.minus.two) %>%
-            summarise(avg_score = mean(sentiment_score), tweet_counts = n()) %>%
-            select(symbol, day, avg_score, tweet_counts) %>%
-            unique() 
- 
-#Load YAHOO finance data
-load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/yahoo-finance.RData"))
-
-##Average Stock Price by hour
-avg_stocks_price_by_hour <- stocks %>% 
-                  mutate(dayhour = paste(lastTradeDate,get_24hour(lastTradeTime))) %>%
-                  group_by(symbol, dayhour) %>%
-                  summarise(price = mean(price), volume=mean(volume)) %>%
-                  mutate(pchange_price_change = pcchange(price)) %>%
-                  mutate(pchange_volume_change = pcchange(volume)) %>%
-                  mutate(pchange_price_change = ifelse(is.na(pchange_price_change) | is.infinite(pchange_price_change) |is.nan(pchange_price_change), 0, pchange_price_change)) %>%
-                  mutate(pchange_volume_change = ifelse(is.na(pchange_volume_change) | is.infinite(pchange_volume_change) |is.nan(pchange_volume_change), 0, pchange_volume_change)) %>%
-                  ungroup() %>%
-                  group_by(symbol) %>%
-                  mutate(scale_pchange_price_change = scale(pchange_price_change)) %>% 
-                  mutate(scale_pchange_price_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
-                  ungroup() %>%
-                  mutate(scale_pchange_volume_change = scale(pchange_volume_change)) %>% 
-                  mutate(scale_pchange_volume_change = ifelse(is.na(pchange_volume_change) | is.infinite(pchange_volume_change) |is.nan(pchange_volume_change), 0, pchange_volume_change)) %>%
-                  ungroup() %>%
-                  select(symbol, dayhour, price, scale_pchange_price_change, scale_pchange_volume_change) %>%
-                  unique()
-
-#Average Stock Price by day
 avg_stocks_price_by_day <- stocks %>% 
-                  group_by(symbol, day=lastTradeDate) %>%
-                  summarise(price = mean(price), volume = mean(volume), prvClose = max(prvClose)) %>%
-                  mutate(pchange_price_change = pcchange(price)) %>%
-                  mutate(pchange_volume = pcchange(volume)) %>%
-                  mutate(pchange_price_change = ifelse(is.na(pchange_price_change) | is.infinite(pchange_price_change) |is.nan(pchange_price_change), 0, pchange_price_change)) %>%
-                  mutate(pchange_volume = ifelse(is.na(pchange_volume) | is.infinite(pchange_volume) |is.nan(pchange_volume), 0, pchange_volume)) %>%
-                  ungroup() %>%
-                  group_by(symbol) %>%
-                  mutate(scale_pchange_price_change = scale(pchange_price_change)) %>% 
-                  mutate(scale_pchange_volume_change = scale(pchange_volume)) %>% 
-                  mutate(scale_pchange_price_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
-                  mutate(scale_pchange_volume_change = ifelse(is.na(scale_pchange_price_change) | is.infinite(scale_pchange_price_change) |is.nan(scale_pchange_price_change), 0, scale_pchange_price_change)) %>%
-                  ungroup() %>%
-                  select(symbol, day, price, prvClose, scale_pchange_price_change, scale_pchange_volume_change) %>%
-                  unique()
-
-#prevClosePrice
-prev_close_by_day <- stocks %>% 
-                  group_by(symbol, day=lastTradeDate) %>%
-                  select(symbol, day, prvClose) %>%
-                  unique()
+  group_by(symbol, day=lastTradeDate) %>%
+  group_by(day,symbol) %>% 
+  filter(volume == max(volume)) %>% # Select last record for the day
+  mutate(price_change = as.numeric(open) - price) %>% #Price change for a day
+  ungroup() %>%
+  group_by(symbol) %>%
+  mutate(scale_price = normalize(price)) %>% 
+  mutate(scale_price_change = normalize(price_change)) %>% 
+  mutate(scale_volume = normalize(volume)) %>% 
+  ungroup() %>%
+  select(symbol, day, price, scale_price, scale_price_change, scale_volume) %>%
+  unique()
 
 #Join score and price
-dat <- inner_join(avg_stocks_price_by_hour, avg_sentiment_score_by_hour)
 dat.byday <- inner_join(avg_stocks_price_by_day, avg_sentiment_score_by_day)
-dat.prevClose <- inner_join(avg_sentiment_score_prev_two_day, prev_close_by_day)
-
-#Plot overlay denisty plots for perchange change in stock price and percent change in sentiment_score
-dat3 <- subset(dat, symbol=="EIX")
-dat3 <- data.frame(Normalized_Percent_Change_By_Hour = c(dat3$scale_pchange_price_change, dat3$scale_pchange_avg_score)
-                   , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat3$scale_pchange_price_change)))
-dat3 <- cbind(dat3, symbol="EIX")
-
-dat4 <- subset(dat, symbol=="GS")
-dat4 <- data.frame(Normalized_Percent_Change_By_Hour = c(dat4$scale_pchange_price_change, dat4$scale_pchange_avg_score)
-                   , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat4$scale_pchange_price_change)))
-dat4 <- cbind(dat4, symbol="GS")
-
-dat5 <- subset(dat, symbol=="IBM")
-dat5 <- data.frame(Normalized_Percent_Change_By_Hour = c(dat5$scale_pchange_price_change, dat5$scale_pchange_avg_score)
-                   , lines = rep(c("Normalized percent change in price", "Normalized percent change in sentiment score"), each = length(dat5$scale_pchange_price_change)))
-dat5 <- cbind(dat5, symbol="IBM")
 
 #EDA for positive words and negative words 
 #Count all positive words that were matched in stocktwits messages
@@ -1141,108 +1067,300 @@ map.market(id=dat.plot$symbol, area=dat.plot$price, group=dat.plot$symbol, color
 map.market(id=freqwords$words, area=freqwords$counts, group=freqwords$words, color=freqwords$counts, main="Top 50 Positive and Negative Sentiment Words", lab=c(FALSE,TRUE))
 ```
 
-3. We plotted the density plot of normalized hourly percent change in sentiment score and price change for three chosen stocks (EIX, IBM, and GS). We observe that the scaled sentiment and price change using $z-score = \frac{(x-\mu)}{\sigma}$ have significant overlap.
-
-*TODO* move to Appendix
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Overlay Density Plot
-datz <- rbind(dat3, dat5, dat4)
-datz %>% 
-  ggplot(aes(x = Normalized_Percent_Change_By_Hour, fill = lines)) + geom_density(alpha = 0.5) + 
-  facet_wrap(~symbol) +
-  theme(legend.position="bottom") +
-  labs(title='Density plot of sentiment score and price change')
-```
-
-4. We plotted the histogram of sentiment score. 
+3. We plotted the histogram of sentiment score. 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 hist(data$sentiment_score, main='Sentiment score', xlab='Sentiment score')
 ```
 
 ### Applying Linear Regression
-#### Modeling stock price change by sentiment score and tweet counts by day
+#### Modeling based on count of number of tweets per day
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Fit linear models by daily percent change in price ~ avg_score + tweet_counts 
-fits4 <- dat.byday %>%
+library(lubridate)
+# Let us model closing price vs count for each stock
+fits <- dat.byday %>%
   group_by(symbol) %>%
-  do(mod = lm(scale_pchange_price_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
+  do(mod = lm(scale_price ~ scale_tweet_counts, data = .))
 
-tidy(fits4, mod) %>% filter(p.value < 0.05 & term != '(Intercept)')  %>% head(n=10) %>% kable 
+# Filter out rows where term is count
+results_price_count <- tidy(fits,mod, conf.int = TRUE) %>% 
+  filter(term=='scale_tweet_counts') %>% 
+  inner_join(ticker_sector)
+colnames(results_price_count)[6]<- 'pval'
 
-results4 <- tidy(fits4, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') 
+# Plot for all stocks
+p1 <- results_price_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.title.x=element_blank(), 
+        axis.text.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.title.y=element_blank()) + scale_y_continuous(limits = c(0, .15))+
+  ggtitle("ClosingPrice~count model")+
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price_count,  pval <.05 )) +
+  theme(legend.position="bottom")
 
-#Plot p-values and see symbols that have significant results
-results4 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results4,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily percent change in price  ~ sentiment score + counts for all stocks") +
-  theme(legend.position = "none") 
+
+## ----echo=FALSE, message=FALSE, fig.width=9------------------------------
+# Model volume ~ count for daily data
+fits <- dat.byday %>%
+  group_by(symbol) %>%
+  do(mod = lm(scale_volume ~ scale_tweet_counts, data = .))
+
+# Filter out rows where term is count
+results_volume_count <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='scale_tweet_counts') %>% inner_join(ticker_sector)
+colnames(results_volume_count)[6]<- 'pval'
+
+# Plot for all stocks and highlight the stocks with pvals <.05
+p2<- results_volume_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.title.x=element_blank(), 
+        axis.text.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank()) + scale_y_continuous(limits = c(0, .15))+
+  ggtitle("Volume~Count model") + xlab("Symbols") + ylab("Pvalues")+
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume_count,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+
+## ----echo=FALSE, message=FALSE, fig.width=10, fig.height=3---------------
+
+# Model Price Change vs count for all stocks
+fits <- dat.byday %>%
+  group_by(symbol) %>%
+  do(mod = lm(scale_price_change ~ scale_tweet_counts, data = .))
+
+# Filter out rows where term is count
+results_prcChange_count <- tidy(fits,mod, conf.int = TRUE) %>% 
+  filter(term=='scale_tweet_counts') %>% inner_join(ticker_sector)
+
+#Rename the column
+colnames(results_prcChange_count)[6]<- 'pval'
+
+# Plot for all stocks
+p3<- results_prcChange_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.title.x=element_blank(), 
+        axis.text.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank()) + scale_y_continuous(limits = c(0, .15))+ 
+  ggtitle("DailyPriceChn~count") + xlab("Symbols") + ylab("Pvalues") + 
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange_count,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+# Extract the legend from p1
+legend = gtable_filter(ggplot_gtable(ggplot_build(p1)), "guide-box") 
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1),top = "P-Value for models Using Daily Normalized Data")
+
+# Let us plot specific for the 3 stocks 
+p1 <- results_price_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  ggplot( aes(symbol,pval, color=symbol))+geom_point()+ scale_y_continuous(limits = c(0, 1))+
+  geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("ClosingPrc~Count")+ theme(legend.position="bottom")
+
+p2<- results_volume_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  ggplot( aes(symbol, pval, color=symbol)) + geom_point() + scale_y_continuous(limits = c(0, 1))+ 
+  geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("Pvalues") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Count")+ theme(legend.position="bottom")
+
+p3<- results_prcChange_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols)  %>% 
+  ggplot( aes(symbol,pval, color=symbol))+geom_point()+ scale_y_continuous(limits = c(0, 1))+
+  geom_hline(yintercept = .05, color='red')+ xlab("Symbols") + ylab("Pvalues") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("DailyPrcChn~Count")+ theme(legend.position="bottom")
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "P-Value for models Using Daily Normalized Data")
+
+# Let us plot the confidence intervals
+p1 <-results_price_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 2) + ggtitle("ClosingPrc~Count")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+p2 <- results_volume_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 2) + ggtitle("Volume~Count")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+p3 <-results_prcChange_count %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 2) + ggtitle("DailyPrcChn~Count")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "Confidence Interval Plots")
+
+# Do regression plots for the 3 stocks based on volume~count
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+
+# Do regression plots for the 3 stocks based on volume~count
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_volume))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+
+# Do regression plots for the 3 stocks based on Daily Price change~count
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price_change))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = lubridate::isoweek(mdy(day))) %>% 
+  ggplot()+geom_line(aes(mdy(day),scale_avg_score, color="Sentiment Score"))+
+  geom_line(aes(mdy(day),scale_tweet_counts, color="Price")) + facet_wrap(~symbol,scales = "free") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
+
 ```
 
-#### Modeling stock volume change by sentiment score and tweet counts by day
+#### Modeling based on Sentiment Score of tweets per day
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Fit linear models by daily percent change in volume ~ avg_score + tweet_counts 
-fits3 <- dat.byday %>%
+library(lubridate)
+# Let us model closing price vs SentimentScore for each stock
+fits <- dat.byday %>%
   group_by(symbol) %>%
-  do(mod = lm(scale_pchange_volume_change ~ scale_pchange_avg_score + scale_pchange_tweet_counts, data = .))
+  do(mod = lm(scale_price ~ scale_avg_score, data = .))
 
-tidy(fits3, mod) %>% filter(p.value < 0.05 & term != '(Intercept)')  %>% head(n=10) %>% kable 
+results_price <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='scale_avg_score') %>% inner_join(ticker_sector)
+colnames(results_price)[6]<- 'pval'
 
-results3 <- tidy(fits3, mod) %>% filter(p.value < 0.05 & term != '(Intercept)')  
+# Plot for all stocks
+p1 <- results_price %>% filter(pval <.5) %>% ggplot( aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") + 
+  theme(axis.title.x=element_blank(), 
+        axis.text.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.title.y=element_blank()) + 
+  ggtitle("ClosingPrc~Score") + scale_y_continuous(limits = c(0, .5))+
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
+  theme(legend.position="bottom")
 
-#Plot p-values and see symbols that have significant results
-results3 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results3,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily percent change in volume  ~ sentiment score + counts for all stocks") +
-  theme(legend.position = "none") 
-```
-
-#### Modeling prvClosePrice using sentiment scores and counts using lag-2 day
-
-5. We fit the linear regression model for _**previous day close price** using previous day's sentiment scores and counts. 
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Fit linear models for matching prvClose ~ avg_score + tweet_counts 
-fits5 <- dat.prevClose %>%
+# Model volume ~ sentiment score
+fits <- dat.byday %>%
   group_by(symbol) %>%
-  do(mod = lm(prvClose ~ avg_score + tweet_counts, data = .))
+  do(mod = lm(scale_volume ~ scale_avg_score, data = .))
 
-tidy(fits5, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% head(n=10) %>% kable 
+# Filter out rows where term is avgScore
+results_volume <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='scale_avg_score') %>% inner_join(ticker_sector)
+#Rename the column
+colnames(results_volume)[6]<- 'pval'
 
-results5 <- tidy(fits5, mod) %>% filter(p.value < 0.05 & term != '(Intercept)')  
+# Plot for all stocks
+p2 <- results_volume%>% filter(pval <.5) %>% ggplot( aes(symbol, pval, color=sector)) + 
+  theme(axis.title.x=element_blank(), 
+        axis.text.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") +
+  ggtitle("Volume~Score") + scale_y_continuous(limits = c(0, .5))+
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
+  theme(legend.position="bottom")
 
-#Plot p-values and see symbols that have significant results
-results5 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results5,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily prvClose ~ avg_score + tweet_counts for Lag-2 days for all stocks") +
-  theme(legend.position = "none") 
-```
-*TODO* Move to Appendix
-#### Model stock price using previous close price, sentiment score and tweet counts by day 
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#Fit linear models by daily stock price ~ prvClose + avg_score + tweet_counts
-fits6 <- dat.byday %>%
+# Model Price Change vs Sentimenet Score for all stocks
+fits <- dat.byday %>%
   group_by(symbol) %>%
-  do(mod = lm(price ~ prvClose + avg_score + tweet_counts, data = .))
+  do(mod = lm(scale_price_change ~ scale_avg_score, data = .))
 
-tidy(fits6, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') %>% head(n=10) %>% kable 
+results_prcChange <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='scale_avg_score') %>% inner_join(ticker_sector)
+colnames(results_prcChange)[6]<- 'pval'
 
-results6 <- tidy(fits6, mod) %>% filter(p.value < 0.05 & term != '(Intercept)') 
+# Plot for all stocks
+p3<- results_prcChange%>% filter(pval <.5) %>% ggplot(aes(symbol, pval, color=sector)) + 
+  geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") +
+  theme(axis.title.x=element_blank(), 
+        axis.text.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ggtitle("DailyPrcChn~Score") + scale_y_continuous(limits = c(0, .5))+
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange,  pval <.05 )) +
+  theme(legend.position="bottom")
 
-#Plot p-values and see symbols that have significant results
-results6 %>% 
-  ggplot(aes(symbol, p.value, color=symbol)) + geom_point() + geom_hline(yintercept = .05, color = 'red') +
-  geom_text_repel(aes(symbol, p.value, label=symbol), data = filter(results6,  p.value <.05 )) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Daily price ~ prvClose + avg_score + tweet_counts for all stocks") +
-  theme(legend.position = "none") 
-  
+# Extract the legend from p1
+legend = gtable_filter(ggplot_gtable(ggplot_build(p1)), "guide-box") 
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1),top = "P-Value for models Using Daily Normalized Data")
+
+# Let us plot specific for the 3 stocks 
+p1 <- results_price %>% filter(symbol %in% selectively_analyzed_symbols)  %>% 
+  ggplot( aes(symbol,pval, color=symbol))+geom_point()+ xlab("Symbols") + ylab("P-values") +
+  geom_hline(yintercept = .05, color='red') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("ClosingPrc~Score")+ theme(legend.position="bottom")
+
+
+p2<- results_volume %>% filter(symbol %in% selectively_analyzed_symbols) %>% 
+  ggplot( aes(symbol, pval, color=symbol)) + geom_point() + xlab("Symbols") + ylab("P-values") +
+  geom_hline(yintercept = .05, color = 'red') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Volume~Score")+ theme(legend.position="bottom")
+
+
+p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>% 
+  ggplot( aes(symbol,pval, color=symbol))+geom_point()+ xlab("Symbols") + ylab("P-values") +
+  geom_hline(yintercept = .05, color='red') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ ggtitle("DailyPrcChange~Score")+ theme(legend.position="bottom")
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "P-Value for Normalized Daily Data")
+
+# Let us plot the confidence intervals
+p1 <-results_price %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 2) + ggtitle("ClosingPrc~Score")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+p2 <- results_volume %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 2) + ggtitle("Volume~Score")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+p3 <-results_prcChange %>% 
+  filter(symbol %in% selectively_analyzed_symbols) %>% 
+  select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
+  ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  geom_point(size = 2) + ggtitle("DailyPrcChn~Score")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+
+grid.arrange(arrangeGrob(p1+ 
+                           theme(legend.position="none"), p2+ 
+                           theme(legend.position="none"), p3+ 
+                           theme(legend.position="none"), nrow=1), top = "Confidence Interval Plots")
+
+# Do regression plots for the 3 stocks based on volume~score
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+
+# Do regression plots for the 3 stocks based on volume~score
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_volume))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+
+# Do regression plots for the 3 stocks based on Daily Price change~score
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price_change))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+
+dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = lubridate::isoweek(mdy(day))) %>% 
+  ggplot()+geom_line(aes(mdy(day),scale_avg_score, color="Sentiment Score"))+
+  geom_line(aes(mdy(day),scale_price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 ```
 
 # Conclusion 
@@ -1257,7 +1375,7 @@ When we included the previous close price in the model along with sentiment scor
 
 # References
 
-1. [Stock Prediction Using Twitter Sentiment Analysis: Anshul Mittal Stanford University and  Arpit Goel Stanford University](http://cs229.stanford.edu/proj2011/GoelMittal-StockMarketPredictionUsingTwitterSentimentAnalysis.pdf)
+1. [Stock Prediction Using Twitter Sentiment Analysis](http://cs229.stanford.edu/proj2011/GoelMittal-StockMarketPredictionUsingTwitterSentimentAnalysis.pdf)
 2. [An example on sentiment analysis with R](http://www.r-bloggers.com/an-example-on-sentiment-analysis-with-r/)
 3. [Understanding Beta](http://www.investopedia.com/articles/financial-theory/09/calculating-beta.asp)
 4. [Low Volatility Investing](http://blog.alphaarchitect.com/2014/10/09/avoid-high-beta-stocks-period/#gs.8pw4tXI)
