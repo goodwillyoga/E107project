@@ -57,8 +57,8 @@ nrow(stocks_est)
 dailyStockData <- stocks_est %>% 
   mutate(day = mdy(lastTradeDate)) %>% 
   group_by(day,symbol) %>% 
-  filter(volume == max(volume)) %>% 
-  mutate(prcChange = open - price) # Add a column for price Change
+  filter(volume == max(volume)) %>% # Select last record for the day
+  mutate(prcChange = open - price) # Add a column for price Change which is the price
 
 # Create a dataset with hourly price change
 hourly_avg_stockPriceChng <- stocks_est %>% 

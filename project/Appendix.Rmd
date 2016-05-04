@@ -1,0 +1,135 @@
+---
+title: "Appendix"
+author: 
+- Mohan Patnam
+- Pulkit Bhanot
+- Pooja Singh
+date: "May 04, 2016"
+output: html_document
+---
+```{r, messages=FALSE, warning=FALSE, echo=FALSE}
+suppressMessages(library(dplyr))
+suppressMessages(library(readr))
+
+suppressMessages(library(ggplot2))
+suppressMessages(library(gridExtra))
+suppressMessages(library(broom))
+suppressMessages(library(ggrepel))
+# Disable logging of all warning messages
+options(warn=-1)
+theme_set(theme_bw(base_size = 14))
+suppressMessages(library(broom))
+suppressMessages(library(knitr))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(portfolio))
+suppressMessages(library(stringr))
+
+# Create helper function to normalize the data
+normalize<-function(m){
+  (m - mean(m))/sd(m)
+}
+```
+
+```{r load tweets, messages=FALSE, warning=FALSE, echo=FALSE}
+load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/processed-tweets.RData"))
+```
+```{r load stocks, messages=FALSE, warning=FALSE, echo=FALSE}
+load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/processed-stocks.RData"))
+```
+
+### Regions from which people are tweeting
+![Geographic areas of origin of Tweets](https://github.com/goodwillyoga/E107project/raw/master/pulkit/userpresence.png)
+
+### Distribution of tweets across all days
+
+```{r,echo=FALSE, message=FALSE, fig.width=9}
+tweets_est %>% group_by(dt) %>% # group on Date
+  summarise(count = n())  %>% mutate(wday = lubridate::wday(dt)) %>% # count number of rows for each date
+  ggplot(aes(dt, log(count), color=wday)) + geom_point() +
+  scale_colour_gradientn(colours=rainbow(7)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  theme(legend.position="bottom")+
+  ggtitle('Distribution of Tweets per Day') + xlab('Dates')+ylab('Count(log scale) ')
+```
+Sunday(Day 1) is color coded as Red, we can see that Saturday's have the least number of tweets followed by Sunday's. and in the middle of the week (Tuesday/Wednessday) we have the maximum number of tweets.
+
+### Model of HourlyVolumeChange with Hourly Sentiment Score
+
+```{r ,echo=FALSE, message=FALSE, fig.width=9}
+# Following is the list of all the stocks which we have downloaded the tweets and the stocks from Yahoo finance
+tickers_symbols <- c("GILD","EIX","GS","AMZN", "RKUS","AAPL","GRPN","XIV","YHOO","VA","MSFT","TSLA","BSX","NVDA","ORCL","EW","CPGX","MRK","V","BXLT","FOXA","ERIC","AVP","TWX","CMCSA","XRX","WY","GNCA","WBA","MO","MA","FOLD","TLT","SNY","RTN","UTX","LOW","MAS","GPT","RICE","IBM","KHC","CDNS","ANTM","HD","INO","OCLR","LULU","SABR","DYN","AXLL","WEN","COH","GOOG","FB","TWTR","XOM","PSX","VLO","PGR","CINF","FAF","JBLU","DAL","HA","ACN","INFY","CTSH")
+# Sectors associate with each stock
+sectors <- c("Healthcare","Utilities","Financial","Services","Technology","Consumer Goods","Technology","Financial","Technology","Services","Technology","Consumer Goods","Healthcare","Technology","Technology","Healthcare","Basic Materials","Healthcare","Financial","Healthcare","Services","Telecommunications","Consumer Goods","Services","Services","Technology","Industrial Goods","Healthcare","Services","Consumer Goods","Financial","Healthcare",
+             "Financial","Healthcare","Industrial Goods","Industrial Goods","Services","Industrial Goods","Financial","Basic Materials","Technology","Consumer Goods","Technology","Healthcare","Services","Healthcare","Technology","Consumer Goods","Technology","Utilities","Basic Materials","Services","Consumer Goods","Technology","Technology","Technology","Basic Materials","Basic Materials","Basic Materials","Financial","Financial","Financial",
+             "Services-Airlines","Services-Airlines","Services-Airlines","Technology","Technology","Technology")
+
+ticker_sector <- data.frame(symbol = tickers_symbols, sector = sectors)
+
+# Create a hourlyStockTweetNormalized dataset which has normalized hourly volume change, Average Price, Hourly price change
+hourlyStockTweetNormalized <- hourly_stockData %>% 
+  mutate(day = as.Date(day_hr)) %>%
+  group_by(symbol,day) %>% mutate(n=n()) %>%  filter(n>1) %>%
+  mutate_each(funs(normalize), hourlyVolumeChng) %>% 
+  mutate_each(funs(normalize),avgPrice) %>% 
+  mutate_each(funs(normalize),prcChange) %>% 
+  inner_join(hourly_tweet_score, by=c("symbol"="symbol", "day_hr"="day_hr")) %>% ungroup() %>%
+  select(symbol,avgPrice,hourlyVolumeChng,prcChange,sector,day_hr, date_timelb,avgScore)
+
+# Let us model hourlyVolumeChange with hourly Sentiment Score and 
+
+fits <- hourlyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(hourlyVolumeChng ~ avgScore, data = .))
+
+results_volume <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_volume)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_volume, aes(symbol, pval, color=sector)) + geom_point() + 
+  geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Hourly VolumeChng~Sentiment Score model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
+  theme(legend.position="bottom")
+```
+
+### Model of Hourly Price with Hourly Sentiment Score
+
+```{r,echo=FALSE, message=FALSE, fig.width=9}
+# Let us model closing hourly avg Price vs Sentiment Score for each stock
+fits <- hourlyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(avgPrice ~ avgScore, data = .))
+
+results_price <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_price)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_price, aes(symbol, pval, color=sector)) + geom_point() + 
+  geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Hourly Price~Sentiment Score model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+```
+
+### Model of Hourly Price chnage with Hourly Sentiment Score
+
+```{r,echo=FALSE, message=FALSE, fig.width=9}
+
+# Let us model Hourly Price Change vs Sentiment Score for all stocks
+fits <- hourlyStockTweetNormalized %>%
+  group_by(symbol) %>%
+  do(mod = lm(prcChange ~ avgScore, data = .))
+
+results_prcChange <- tidy(fits,mod, conf.int = TRUE) %>% filter(term=='avgScore') %>% inner_join(ticker_sector)
+colnames(results_prcChange)[6]<- 'pval'
+
+# Plot for all stocks
+ggplot(results_prcChange, aes(symbol, pval, color=sector)) + 
+  geom_point() + xlab("Symbols") + ylab("P-values") + 
+  geom_hline(yintercept = .05, color = 'red') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Hourly Price Change~Sentiment Score model") +
+  geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_prcChange,  pval <.05 )) +
+  theme(legend.position="bottom")
+
+```
