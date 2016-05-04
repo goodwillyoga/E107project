@@ -1076,6 +1076,10 @@ hist(data$sentiment_score, main='Sentiment score', xlab='Sentiment score')
 ### Applying Linear Regression
 #### Modeling based on count of number of tweets per day
 
+Similar to Twitter Analysis, we do linear regression for StockTwits dataset to find relation between volume, closing Price and Daily Price Change with number of tweets. 
+
+Let us try to model Closing Price, Volume and Daily Price change.
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(lubridate)
 # Let us model closing price vs count for each stock
@@ -1100,8 +1104,6 @@ p1 <- results_price_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, co
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price_count,  pval <.05 )) +
   theme(legend.position="bottom")
 
-
-## ----echo=FALSE, message=FALSE, fig.width=9------------------------------
 # Model volume ~ count for daily data
 fits <- dat.byday %>%
   group_by(symbol) %>%
@@ -1122,9 +1124,6 @@ p2<- results_volume_count %>% filter(pval <.15) %>% ggplot( aes(symbol, pval, co
   ggtitle("Volume~Count model") + xlab("Symbols") + ylab("Pvalues")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume_count,  pval <.05 )) +
   theme(legend.position="bottom")
-
-
-## ----echo=FALSE, message=FALSE, fig.width=10, fig.height=3---------------
 
 # Model Price Change vs count for all stocks
 fits <- dat.byday %>%
@@ -1157,7 +1156,15 @@ grid.arrange(arrangeGrob(p1+
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
                            theme(legend.position="none"), nrow=1),top = "P-Value for models Using Daily Normalized Data")
+```
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=.5}
+grid.newpage()
+grid.draw(legend) 
+```
 
+From the above 3 plots we can see that we can model Daily volume, Closing Price and Daily Price change for stocks like AAPL, AVP, TWTR, TSLA, GILD with number of tweets for these shares with the p-values <.05. Let us look at the selected 3 stocks and try to see if the above linear regression explains something about them.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Let us plot specific for the 3 stocks 
 p1 <- results_price_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
@@ -1181,34 +1188,48 @@ grid.arrange(arrangeGrob(p1+
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
                            theme(legend.position="none"), nrow=1), top = "P-Value for models Using Daily Normalized Data")
+```
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=.5}
+grid.newpage()
+grid.draw(legend) 
+```
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Let us plot the confidence intervals
 p1 <-results_price_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 2) + ggtitle("ClosingPrc~Count")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_point(size = 2) + ggtitle("ClosingPrc~Count")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p2 <- results_volume_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 2) + ggtitle("Volume~Count")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_point(size = 2) + ggtitle("Volume~Count")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 p3 <-results_prcChange_count %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  geom_point(size = 2) + ggtitle("DailyPrcChn~Count")+ xlab("Symbols") + ylab("Conf. Interval") + scale_y_continuous(limits = c(-1, 1.2))+
+  geom_point(size = 2) + ggtitle("DailyPrcChn~Count")+ xlab("Symbols") + ylab("Conf. Interval") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
 
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
                            theme(legend.position="none"), nrow=1), top = "Confidence Interval Plots")
+```
+```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=.5}
+grid.newpage()
+grid.draw(legend) 
+```
 
+From the above we can see that we have significant result for Volume ~ Tweet Counts for GS  as p-value <.05 and also confidence intervals do not include 0, so the relationship is significant. Let us try to look at the regression plots as well.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Do regression plots for the 3 stocks based on volume~count
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
@@ -1217,13 +1238,20 @@ dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(s
 
 # Do regression plots for the 3 stocks based on Daily Price change~count
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price_change))+geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
+```
+
+The plots kind of show that GS Daily volume vs. tweet counts can be represented by a linear regression model.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week = lubridate::isoweek(mdy(day))) %>% 
-  ggplot()+geom_line(aes(mdy(day),scale_avg_score, color="Sentiment Score"))+
-  geom_line(aes(mdy(day),scale_tweet_counts, color="Price")) + facet_wrap(~symbol,scales = "free") + 
+  ggplot()+geom_line(aes(mdy(day),scale_tweet_counts, color="Sentiment Score"))+
+  geom_line(aes(mdy(day),scale_price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
 
 ```
+
+We see a lag relationship between Tweet counts and Stock price movements for GS. 
 
 #### Modeling based on Sentiment Score of tweets per day
 
