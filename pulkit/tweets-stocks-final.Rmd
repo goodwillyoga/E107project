@@ -84,7 +84,7 @@ Let us visualize number of users for each US state
 <div style="width:100%; height=70%">
 ![US-stat distribution](https://github.com/goodwillyoga/E107project/raw/master/pulkit/stateuserdistribution.png)
 </div>
-Let us start with looking at the amount of tweets that we have collected for each symbol on log scale  
+Let us continue with looking at the amount of tweets that we have collected for each symbol on log scale  
 ```{r,echo=FALSE, message=FALSE, fig.width=9}
 
 tweets_est %>% group_by(symbol) %>% # group on symbol

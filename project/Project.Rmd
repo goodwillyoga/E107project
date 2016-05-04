@@ -58,7 +58,7 @@ library(broom)
 library(knitr)
 library(RColorBrewer)
 library(portfolio)
-
+library(stringr)
 ```
 
 ##Data Description:
@@ -120,6 +120,11 @@ In the [stock-twits_multiple.R](https://raw.githubusercontent.com/goodwillyoga/E
 Next we aggregate collected data in  [stock-twits-processing.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-processing.R) file and cleanup duplicate messages. We then calculate the sentiment score for each tweet( or message) by taking the counts of postive terms minus the counts of negative terms in a tweet as explained in a paper [here](http://www.r-bloggers.com/an-example-on-sentiment-analysis-with-r/). We used [AFINN](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010) word list and English Opinion Lexicon positive and negative word lists to compare the words in a tweet to determine if it is a postiver term or a negative term to calculate the sentiment score. 
 
 In the final modelling step in [stock-twits-analysis.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-analysis.R) file, we combine the StockTwits data and [Yahoo! finance data](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) to model the stock price based on the tweet counts and sentiment scores. (The Yahoo finance data is in the EST timezone and so we converted the StockTwits timestanp into EST timestamp also.)
+
+#### Data Normalization
+We normalize each time series to z-scores on the basis of a local mean and standard deviation to provide a common scale for comparison of our predictors and stock market indicators.
+
+$$Z_({x_{i}}) = \frac{x_{i} - \mu(X)}{\sigma(X)}$$ 
 
 ##Assumptions:
 1. The historical weekly close price is used to calculate changes in the returns of stocks for the chosen period.
@@ -548,8 +553,11 @@ tail(tweets_est, n=3) %>% select(id_str,text,symbol,sector,date_timelb)%>% kable
 tail(dailyStockData, n=3)%>% select(symbol,price,open,volume,date_timelb,sector)%>% kable
 
 ```
-
-Let us start with looking at the amount of tweets that we have collected for each symbol on log scale  
+Twitter feeds also gives us the location that the user has given in the account registration, let us see what are the locations that these users belong to. Let us visualize number of users for each of the US state
+<div style="width:100%; height=70%">
+![US-stat distribution](https://github.com/goodwillyoga/E107project/raw/master/pulkit/stateuserdistribution.png)
+</div>
+Let us continue with looking at the amount of tweets that we have collected for each symbol on log scale  
 
 ```{r,echo=FALSE, message=FALSE, fig.width=9}
 
@@ -685,7 +693,7 @@ colnames(results_price_count)[6]<- 'pval'
 ggplot(results_price_count, aes(symbol, pval, color=sector)) + 
   geom_point() + geom_hline(yintercept = .05, color = 'red') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Closing Price~count model") + xlab("Symbols") + ylab("Pvalues")+
+  ggtitle("Closing Price~count model for Daily Data") + xlab("Symbols") + ylab("Pvalues")+
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price_count,  pval <.05 )) +
   theme(legend.position="bottom")
 
@@ -742,7 +750,7 @@ p3<- results_prcChange_count %>%
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
-                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
+                           theme(legend.position="none"), nrow=1), top = "P-Value for normalized Daily Data")
 
 # Let us plot the confidence intervals
 p1 <- results_volume_count %>% 
@@ -809,7 +817,7 @@ colnames(results_volume)[6]<- 'pval'
 ggplot(results_volume, aes(symbol, pval, color=sector)) + 
   geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Volume~Sentiment-Score model") +
+  ggtitle("Volume~Sentiment-Score model for Daily Data") +
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_volume,  pval <.05 )) +
   theme(legend.position="bottom")
 
@@ -825,7 +833,7 @@ colnames(results_price)[6]<- 'pval'
 ggplot(results_price, aes(symbol, pval, color=sector)) + 
   geom_point() + geom_hline(yintercept = .05, color = 'red') + xlab("Symbols") + ylab("P-values") + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  ggtitle("Closing Price~Sentiment Score model") +
+  ggtitle("Closing Price~Sentiment Score model for Daily Data") +
   geom_text_repel(aes(symbol, pval, label=symbol), data = filter(results_price,  pval <.05 )) +
   theme(legend.position="bottom")
 
@@ -869,7 +877,7 @@ p3<- results_prcChange %>% filter(symbol %in% selectively_analyzed_symbols)  %>%
 grid.arrange(arrangeGrob(p1+ 
                            theme(legend.position="none"), p2+ 
                            theme(legend.position="none"), p3+ 
-                           theme(legend.position="none"), nrow=1), top = "P-Value for standardized")
+                           theme(legend.position="none"), nrow=1), top = "P-Value for Normalized Daily Data")
 
 ```
 
@@ -951,7 +959,11 @@ dailyStockTweetNormalized %>% filter(symbol %in% selectively_analyzed_symbols) %
 ```
 
 <pre><code>
-From the above plot we can clearly see that the sentimnet scores appers to follow the price movements of the stocks.
+Some of the takeaways that we can derive based on the data
+1) Data shows that there are more number of tweets for technology sector companies then compared to other sectors.
+2) We can successively model predictore for Daily volumes, Closing prices and Daily Price variations for some of the stocks like AVP, BSX, XRX, PSX, GILD just based on the number of tweets using Linear Regression. 
+3) Linear regression model based on sentiment scores with Daily volumes, Closing prices and Daily Price are not good predictors for these models as p-values >.05.
+4) We see a clear follower relationship between Sentiment scores and Stock price movements. Analyzing the trends using Cross correlation may provide some more insights into this. 
 </code></pre>
 
 # Sentiment Analysis of StockTwits data on Stock prices
@@ -962,8 +974,6 @@ data <- read_csv(file = "https://raw.githubusercontent.com/goodwillyoga/E107proj
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-library(lubridate)
-library(stringr)
 
 colnames(data) <- c('id','message','createdat','symbol','sentiment_score')
 
@@ -971,8 +981,8 @@ colnames(data) <- c('id','message','createdat','symbol','sentiment_score')
 data <- data %>% mutate(utc.time = as.POSIXct(data$createdat, tz="UTC")) %>%
                  mutate(est.time = format(utc.time, tz="America/New_York")) %>%
                  mutate(est.date = substr(as.character(format(strftime(est.time, '%m/%d/%Y'))), 2,10)) %>%
-                 mutate(est.date.minus.two = substr(as.character(format(mdy(est.date)-2, '%m/%d/%Y')), 2,10)) %>%
-                 mutate(est.hour = paste(est.date, hour(est.time)))
+                 mutate(est.date.minus.two = substr(as.character(format(lubridate::mdy(est.date)-2, '%m/%d/%Y')), 2,10)) %>%
+                 mutate(est.hour = paste(est.date, lubridate::hour(est.time)))
 
 #Percent change function
 pcchange=function(x,lag=1) {
@@ -1038,7 +1048,7 @@ avg_sentiment_score_prev_two_day <- data %>%
             unique() 
  
 #Load YAHOO finance data
-load("/Users/poojasingh/Documents/HE107/E107project/pulkit/yahoo-finance.RData")
+load(url("https://github.com/goodwillyoga/E107project/raw/master/pulkit/yahoo-finance.RData"))
 
 ##Average Stock Price by hour
 avg_stocks_price_by_hour <- stocks %>% 
