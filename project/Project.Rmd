@@ -1560,12 +1560,8 @@ p1 <-results_price %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
-  theme(plot.title=element_text(size = rel(0.75))) +
-  theme(axis.title.x=element_blank(), 
-        axis.ticks=element_blank(),
-        axis.title.y=element_blank())+ 
-  geom_point(size = 2) + ggtitle("ClosingPrc~Score") + theme(legend.position="bottom")
-  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`))
+  geom_point(size = 2) + ggtitle("ClosingPrc~Score") +
+  geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`)) + theme(legend.position="bottom")
 
 p2 <- results_volume %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
@@ -1642,13 +1638,12 @@ We see a lag relationship betweent the sentiment score and price for GS that did
 # Conclusion 
 The detailed statistical analysis is an attempt to present the Beta as a measure of stock volatility (or risk). The exploratory data analysis of "beta" is shown to be normal and further the case study of 3 very distinct stocks demonstrates that the volatility of a stock can be explained to some extent using the volatility of the benchmark index (S&P500). The next study of beta using an universe of 2500+ stocks demonstrates that there is a trend between beta and the stock returns. The returns within the universe of low beta stocks are actually better with increasing beta (< 0.8). however, this trend doesn't hold good with stocks having much higher beta (> 1.0) where returns actually trend lower with increasing beta. This was also confirmed with the Monte Carlo simulation performed by comparing the returns of low-beta stocks against the high-beta ones.
 
-Twitter Data shows that there are more number of tweets for technology sector companies then compared to other sectors. We can successively model Daily volumes, Closing prices and Daily Price variations for some of the stocks like AVP, BSX, XRX, PSX, GILD just based on the number of tweets using Linear Regression. 
-Linear regression model based on sentiment scores with Daily volumes, Closing prices and Daily Price are not good predictors for these models as p-values >.05.
-We see a clear follower relationship between Sentiment scores and Stock price movements. Analyzing the trends using Cross correlation may provide some more insights into this. 
+Twitter Data shows that there are more number of tweets for technology sector companies then compared to other sectors. We can successively model Daily volumes, Closing prices and Daily Price variations for some of the stocks like AVP, BSX, XRX, PSX, GILD just based on the number of tweets using Linear Regression. Linear regression model based on sentiment scores with Daily volumes, Closing prices and Daily Price are not good predictors for these models as p-values for majority of the stocks is >.05.  For the 3 chosen stocks we can see that regression Models using Number of tweets can be a good fit for Daily Stock Volume and Price change. 
+We see a clear follower relationship between Volume of tweets with Stock Price movements as well as Sentiment scores and Stock price movements. Analyzing the trends using Cross correlation may provide some more insights into this.
 
-StockTwits data results were slightly different from Twitter results. For example, we got significant results for linear models for GS Daily Volume vs. Tweet counts and we got significant results for IBM for Daily Price vs. Sentiment Score. This may be attruibuted to different users contiributing to different datasets. In StockTwits data set we did not gather user data so we could not see the overlap of users between the Twitter and StockTwits datasets. 
+StockTwits data results were slightly different from Twitter results. For example, we got similar results for linear models for GS Daily Volume vs. Tweet counts and we got significant results for IBM for Daily Price vs. Sentiment Score with StockTwits dataset but not with Twitter dataset. This may be attributed to different users contributing to different datasets. In StockTwits data set we did not gather user data so we could not see the overlap of users between the Twitter and StockTwits datasets.
 
-As the stock markets are closed over the weekend, but people are tweeting continously, we have some missing data for the weekend stock prices in the model. We can use simple avarage scheme to fill the missing data for the weekend before fitting the model but is left for future consideration. Also, we can use more advanced natural language processing techniques to classify tweets into different moods like bearish, bullish and neutral and model using the mood sentiment. Lastly we can study the time-lag of the mood/sentiment for better models for market and mood cross-correlation. 
+As the stock markets are closed over the weekend, but people are tweeting continuously, we have some missing data for the weekend stock prices in the model. We can use simple average scheme to fill the missing data for the weekend before fitting the model but is left for future consideration. Lexicons that we used for sentiments were last modified in the year 2013. We know that slang that people use to express themselves does change. We can modify the lexicon list and add words that are more commonly used now and that might have an impact but we will still see that sentiment scores will always follow the trends seen in Stock Price movements.Lastly we can study the time-lag of the mood/sentiment for better models for market and mood cross-correlation. 
 
 # References
 
