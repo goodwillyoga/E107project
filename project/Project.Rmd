@@ -1263,8 +1263,11 @@ When we included the previous close price in the model along with sentiment scor
 4. [Low Volatility Investing](http://blog.alphaarchitect.com/2014/10/09/avoid-high-beta-stocks-period/#gs.8pw4tXI)
 
 # Appendix
-*TODO* include Appendix.html link
-[Distribution of Tweets per Day] (https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
-[Hourly Price chnage with Hourly Sentiment Score] (https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
-[Hourly Price with Hourly Sentiment Score] (https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
-[HourlyVolumeChange with Hourly Sentiment Score] (https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
+[Distribution of Tweets per Day](https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
+
+[Hourly Price chnage with Hourly Sentiment Score](https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
+
+[Hourly Price with Hourly Sentiment Score](https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
+
+[HourlyVolumeChange with Hourly Sentiment Score](https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
+
