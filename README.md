@@ -25,6 +25,20 @@ Pooja Singh
 
 [Precomputed Tweets Rdata](https://github.com/goodwillyoga/E107project/tree/master/pulkit) is present in file processed-tweets.RData. This also contains the sentiment scrores for the twitter dataset.
 
+[Tweeter extractors](https://github.com/goodwillyoga/E107project/tree/master/pulkit/extractors)
+
+[Twitter Data Cleaner](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter-data-cleaner.R)
+
+[Twitter PreComputer](https://github.com/goodwillyoga/E107project/blob/master/pulkit/tweeter-score-compute.R)
+
+[Maps generator](https://github.com/goodwillyoga/E107project/blob/master/pulkit/maps-generator.R)
+
+[Yahoo Data Extractor](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-extractor.R)
+
+[Yahoo Data Aggregator](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-processor.R)
+
+[Stocks PreComputationer](https://github.com/goodwillyoga/E107project/blob/master/pulkit/stocks-compute.R)
+
 [Lexicon](https://github.com/goodwillyoga/E107project/tree/master/pulkit/opinion-lexicon-English) can be accessed here.
 
 [StockTwits Data](https://github.com/goodwillyoga/E107project/tree/master/pooja/data) can be accessed here.
