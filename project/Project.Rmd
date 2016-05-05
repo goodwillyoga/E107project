@@ -1,6 +1,6 @@
 ---
 title: "Statistical Analysis of Stock Volatility"
-subtitle: "Introduction to Data Science E109 Spring 2016"
+subtitle: "Introduction to Data Science E107 Spring 2016"
 author: 
 - Mohan Patnam
 - Pulkit Bhanot
@@ -8,6 +8,7 @@ author:
 date: "May 04, 2016"
 output: html_document
 ---
+_**[Project Github Repository](https://github.com/goodwillyoga/E107project)**_
 
 #Background and Motivation
 
@@ -845,7 +846,7 @@ dailyStockTweetNormalized %>%
   ggplot( aes(count,price))+geom_point()+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  geom_smooth(color='red') +facet_wrap(~symbol)+ xlab("Tweet Counts") + ylab("Price")
+  geom_smooth(color='red') +facet_wrap(~symbol)+ xlab("Scaled Tweet Counts") + ylab("Scaled Price")
 
 # Do regression plots for the 3 stocks based on volume~count
 dailyStockTweetNormalized %>% 
@@ -853,7 +854,7 @@ dailyStockTweetNormalized %>%
   ggplot( aes(count,volume))+geom_point()+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  geom_smooth(color='red') +facet_wrap(~symbol)+ xlab("Tweet Counts") + ylab("Volume")
+  geom_smooth(color='red') +facet_wrap(~symbol)+ xlab("Scaled Tweet Counts") + ylab("Scaled Volume")
 
 # Do regression plots for the 3 stocks based on Daily Price change~count
 dailyStockTweetNormalized %>% 
@@ -861,7 +862,7 @@ dailyStockTweetNormalized %>%
   ggplot( aes(count,prcChange))+geom_point()+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  geom_smooth(color='red') +facet_wrap(~symbol)+ xlab("Tweet Counts") + ylab("Price Change")
+  geom_smooth(color='red') +facet_wrap(~symbol)+ xlab("Scaled Tweet Counts") + ylab("Scaled Price Change")
 
 ```
 
@@ -873,7 +874,7 @@ selectively_analyzed_symbols <- c(selectively_analyzed_symbols)
 dailyStockTweetNormalized %>% 
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   mutate(md = lubridate::mday(day)) %>%  
-  ggplot()+geom_line(aes(md,volume, color="Volume"))+ xlab("Day of April")+ ylab("Price/Tweet Volume")+
+  ggplot()+geom_line(aes(md,volume, color="Volume"))+ xlab("Days in April")+ ylab("Price/Tweet Volume")+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
   geom_line(aes(md,price, color="Price")) + facet_wrap(~symbol,scales = "free") + theme(legend.position="bottom")
@@ -1071,8 +1072,8 @@ dailyStockTweetNormalized %>%
   ggplot()+geom_line(aes(md,avgScore, color="Sentiment Score"))+ xlab("Day in April")+ ylab("Price/Sentiment Score")+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  geom_line(aes(md,price, color="Price")) + facet_wrap(~symbol,scales = "free") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ theme(legend.position="bottom")
+  geom_line(aes(md,price, color="Price")) + 
+  facet_wrap(~symbol,scales = "free") + theme(legend.position="bottom")
 
 ```
 
@@ -1396,21 +1397,21 @@ We can see that for the cases when p-values <.05, confidence intervals also do n
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price)) +
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  xlab("Tweet Counts") + ylab("Price") +
+  xlab("Scaled Tweet Counts") + ylab("Scaled Price") +
   geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on volume~count
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_volume)) +
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  xlab("Tweet Counts") + ylab("Volume") +
+  xlab("Scaled Tweet Counts") + ylab("Scaled Volume") +
   geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on Daily Price change~count
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_tweet_counts,scale_price_change))+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  xlab("Tweet Counts") + ylab("Price Change") +
+  xlab("Scaled Tweet Counts") + ylab("Scaled Price Change") +
   geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 ```
 
@@ -1560,6 +1561,10 @@ p1 <-results_price %>%
   filter(symbol %in% selectively_analyzed_symbols) %>% 
   select(symbol,estimate, pval,`conf.low`, `conf.high`) %>% 
   ggplot( aes(x = symbol, y = estimate, color = symbol)) +
+  theme(plot.title=element_text(size = rel(0.75)))  +
+  theme(axis.title.x=element_blank(), 
+        axis.ticks=element_blank(),
+        axis.title.y=element_blank()) + 
   geom_point(size = 2) + ggtitle("ClosingPrc~Score") +
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`)) + theme(legend.position="bottom")
 
@@ -1582,7 +1587,6 @@ p3 <-results_prcChange %>%
   theme(axis.title.x=element_blank(), 
         axis.ticks=element_blank(),
         axis.title.y=element_blank()) + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   geom_point(size = 2) + ggtitle("DailyPrcChn~Score") + 
   geom_errorbar(aes(ymax = `conf.high`, ymin = `conf.low`)) + theme(legend.position="bottom")
 
@@ -1603,21 +1607,21 @@ We see a significant result for IBM as confidence intervals for Closing Price an
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price))+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  xlab("Sentiment Score") + ylab("Price") +
+  xlab("Scaled Sentiment Score") + ylab("Scaled Price") +
   geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on volume~score
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_volume))+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  xlab("Sentiment Score") + ylab("Volume") +
+  xlab("Scaled Sentiment Score") + ylab("Scaled Volume") +
   geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 
 # Do regression plots for the 3 stocks based on Daily Price change~score
 dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% ggplot( aes(scale_avg_score,scale_price_change))+
   theme(axis.title.x = element_text(size = rel(0.75))) +
   theme(axis.title.y = element_text(size = rel(0.75))) +
-  xlab("Sentiment Score") + ylab("Price Change") +
+  xlab("Scaled Sentiment Score") + ylab("Scaled Price Change") +
   geom_point()+geom_smooth(color='red') +facet_wrap(~symbol)
 ```
 
@@ -1654,7 +1658,7 @@ As the stock markets are closed over the weekend, but people are tweeting contin
 
 # Appendix
 
-_**[Project Github Repository](https://github.com/goodwillyoga/E107project/tree/master/project)**_
+_**[Project Github Repository](https://github.com/goodwillyoga/E107project)**_
 
 [Distribution of Tweets per Day](https://github.com/goodwillyoga/E107project/blob/master/project/Appendix.html)
 
