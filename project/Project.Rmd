@@ -10,16 +10,55 @@ output: html_document
 ---
 _**[Project Github Repository](https://github.com/goodwillyoga/E107project)**_
 
+# Table of contents
+1. [Background and Motivation](#Background)
+2. [Project Objectives](#Objectives)
+3. [Concepts and Methods](#Concepts)
+4. [Data Description](#DataDescription)
+5. [Data Scraping](#DataScraping)
+    1. [Twitter Data Extraction and Processing](#TwitterDataExtraction)
+    2. [Yahoo Finance Data Extraction and Processing](#YahooFinanceData)
+    3. [StockTwits Data Extraction and Processing](#StockTwitsData)
+    4. [Data Normalization](#DataNormalization)
+6. [Assumptions](#Assumptions)
+7. [Outline](#Outline)
+8. [Beta Analysis](#BetaAnalysis)
+9. [Beta Computation: Case Study of 3 stocks](#BetaComputation)
+    1. [Analysis for a low-beta stock (EIX)](#EIX)
+    2. [Analysis for a medium-beta stock (IBM)](#IBM)
+    3. [Analysis for a high-beta stock (GS)](#GS)
+10. [Regression between beta and stock returns](#RegressionBeta)  
+11. [Trend estimation using smoothing](#TrendSmoothing)
+12. [Regression between low beta stocks and returns](#RegressionLowBeta)
+13. [Analysis of a basket of low-volatility stocks vs high-volatility stocks](#AnalysisBasket)
+    1. [MonteCarlo simulation](#MonteCarlo)
+14. [Twitter Analysis on Stock volatility](#TwitterAnalysis)  
+    1. [Exploratory Data Analysis](#TWTREDA)
+    2. [Applying Linear Regression](#TWTRLR)
+      1. [Modeling based on count of number of tweets per day](#TWTRCounts)
+      2. [Modeling based on Sentiment Score of tweets per day](#TWTRSentiment)
+15. [StockTwits Analysis on Stock Volatility](#StockTwits)
+    1. [Exploratory Data Analysis](#StockTwitsEDA)
+    2. [Applying Linear Regression](#StockTwitsLM)
+      1. [Modeling based on count of number of tweets per day](#StockTwitsCounts)
+      2. [Modeling based on Sentiment Score of tweets per day](#StockTwitsSentiments)
+16. [Conclusion](#Conclusion) 
+17. [References](#References)
+18. [Appendix](#Appendix)
+
+<div id='Background'/>
 #Background and Motivation
 
 The primary motivation of the project is to highlight the "risk" associated with Stocks by applying statistical methods to measure factors that affect the volatility of stocks such as “Market Sentiment” ("Beta", "Standard Deviation") and “Social Sentiment” (“Twitter chatter volume", "Twitter sentiment score”). The fundamental reason to choose a topic in finance is partly current experience working in the industry and partly to understand the significance of "risk" being an end investor. Many of us manage different types of brokerage accounts (stock trading, 401k and IRA accounts) with no clear understanding of different risk factors associated with the returns of these accounts. The risk appetite itself differs widely with different classes of investors depending on their personal situation and other factors. Hence it is prudent for such investors to understand the risk factors associated with their individual stocks or funds. Further, the recent advances in the social media has provided a wealth of information in the form of Twitter feeds or Google trends that can further provide great insight on how the sentiment of investors can potentially affect the volatility of stocks. This research is an exploratory attempt to highlight factors that can affect stock volatility backed by appropriate statistical analysis and models. 
 
+<div id='Objectives'/>
 #Project Objectives 
 
 Volatility is a statistical measure of the dispersion of returns for a given security or market-index. Commonly, the higher the volatility, the riskier the security. The volatility itself is affected by multiple factors such as “Beta”, “Standard Deviation”, “Company Earnings”, “Balance Sheet”, “Analyst Recommendations” and “Social Sentiment (tweets)”.  We will start with the concept of Beta as a measure of volatility of a stock relative to the benchmark (like S&P 500) and analyze how it affects the returns of a stock relative to the benchmark. In particular, we will run a simple case study by choosing three stocks with widely differing returns relative to the benchmark (S&P 500) to emphasize the effect of beta on such classes of stocks. We will then generalize this a bit more, by comparing Beta (risk) for a universe of stocks against their respective returns for a chosen period and more important, we want to understand if a portfolio of low-volatility stocks earn returns different from a portfolio of high-volatility stocks. This is one of the fundamental questions that this research ponders upon by providing a statistical insight into the results. 
 
 The main focus of this research is to analysis market sentiment factors as well as social sentiment that can potentially affect Stock's volatility. We primarily designed this way to make this project complete. Hence the second part of the research focusses on user tweets (such as Twitter and StockTwits) that has been gaining momentum since the advent of Social Media Revolution. We try to investigate if the social sentiment (tweets) has any impact on stock volatility on a short term basis, in particular (given the project time period is about one month). We will run through several regression models to predict if the stock's volatility is affected by factors such as tweet count and sentiment score (as predictors). We will also ponder little bit about social chatter being possibly a leading or lagging indicator of stock volatility, if any. 
 
+<div id='Concepts'/>
 ##Concepts and Methods:
 **Beta**: A quantitative measure of the volatility of a stock relative to the benchmark index, S&P 500, which is generally considered representative of the overall US securities market. Specifically, Beta is the performance the stock has experienced in the last 60 months as the S&P 500 moved 1% up or down. 
 
@@ -62,6 +101,7 @@ suppressMessages(library(portfolio))
 suppressMessages(library(stringr))
 ```
 
+<div id='DataDescription'/>
 ##Data Description:
 1.	The first part of analysis around beta uses the public data available in [Yahoo! Finance](http://finance.yahoo.com/) and [Fidelity investment](https://research2.fidelity.com/Screener).
 
@@ -99,17 +139,21 @@ head(data[,1:4], n=5) %>% kable
 # TODO
 ```
 
+<div id='DataScraping'/>
 ##Data Scraping:
 We wanted to gather tweets from [Twitter](https://twitter.com/) and stock data from [Yahoo! Finance](http://finance.yahoo.com/). Here we try to explain briefly the steps done for extraction/processing of tweets and stocks data.
 
 ![Processing Stages](https://github.com/goodwillyoga/E107project/raw/master/pulkit/Preprocessing-stages.png)
 
+<div id='TwitterDataExtraction'/>
 ### Twitter Data Extraction and Processing
 There are some limitations on the number of requests that can be made to the twitter REST api. So we decided to use the [java streaming api](https://github.com/twitter/hbc) to capture the live tweets and record them into a file twitter.json. We called this component [extractors](https://github.com/goodwillyoga/E107project/tree/master/pulkit/extractors). The file twitter.json was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [twitter-data-cleaner.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter-data-cleaner.R) is run on the files. Since this extraction process is very time consuming so this script was added the capability to perform the extraction in append mode, wherein the contents of a new file are appended to an already extracted dataset from previously processed files. The script creates a .RData file [twitter.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/twitter.RData) with 4 datasets tweets, users, hashtags and symbols. For further analysis we will be using the tweets and symbols dataset. These datasets are read by [tweeter-score-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/tweeter-score-compute.R) which mutate the time of each tweets to America/New_York timezone. It computes the sentiment score for each tweet using the [Opinion Lexicon](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html), which has a list of 6800 positive/negative words. It stores the sentiment scores in a dataset scores. It also computes 2 additional datasets daily_tweet_score and hourly_tweet_score these datasets contain the normalized avg sentiment scores. It also creates a [word cloud](https://github.com/goodwillyoga/E107project/blob/master/pulkit/wordCloud.png) of the frequently used words in these tweets. It writes the 4 datasets into the file [processed-tweets.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/processed-tweets.RData).
 
+<div id='YahooFinanceData'/>
 ### Yahoo Finance Data Extraction and Processing
 We wrote a rscript [yahoo-finance-data-extractor.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-extractor.R), that extracts the prices of the choosen 70 stocks and appends it into a csv stocks.csv. The file stocks.csv was periodically backed-up, gzipped and truncated to continue gathering further data. The compressed data files can be found under [data](https://github.com/goodwillyoga/E107project/tree/master/data) directory.The script [yahoo-finance-data-processor.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance-data-processor.R) is run on these files which combines the records read from the current file with the already processed records and writes it into the file [yahoo-finance.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData). This [yahoo-finance.RData](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) is then read by [stocks-compute.R](https://github.com/goodwillyoga/E107project/blob/master/pulkit/stocks-compute.R) which creates 3 datasets stocks_est, hourly_stockData and dailyStockData. 
 
+<div id='StockTwitsData'/>
 ### StockTwits Data Extraction and Processing
 We followed a similar approach as Twitter data to collect tweets for the chosen stocks for three weeks from [StockTwits](https://api.stocktwits.com/api/2/streams/symbol/AAPL.json). StockTwits is a financial communications platform for the investing community so we wanted to explore if we acheive similar results as in Twitter analysis. The data gathering, cleaning and processing steps from StockTwits can be summarized as below
   
@@ -121,11 +165,13 @@ Next we aggregate collected data in  [stock-twits-processing.R](https://raw.gith
 
 In the final modelling step in [stock-twits-analysis.R](https://raw.githubusercontent.com/goodwillyoga/E107project/master/pooja/stock-twits-analysis.R) file, we combine the StockTwits data and [Yahoo! finance data](https://github.com/goodwillyoga/E107project/blob/master/pulkit/yahoo-finance.RData) to model the stock price based on the tweet counts and sentiment scores. (The Yahoo finance data is in the EST timezone and so we converted the StockTwits timestanp into EST timestamp also.)
 
+<div id='DataNormalization'/>
 #### Data Normalization
 We normalize each time series to z-scores on the basis of a local mean and standard deviation to provide a common scale for comparison of our predictors and stock market indicators.
 
 $$Z_({x_{i}}) = \frac{x_{i} - \mu(X)}{\sigma(X)}$$ 
 
+<div id='Assumptions'/>
 ##Assumptions:
 1. The historical weekly close price is used to calculate changes in the returns of stocks for the chosen period.
 
@@ -144,10 +190,12 @@ $$Z_({x_{i}}) = \frac{x_{i} - \mu(X)}{\sigma(X)}$$
 
 7. *TODO* Explain the criteria for choosing 50+ stocks for social sentiment analysis.
 
-### Outline 
+<div id='Outline'/>
+## Outline 
 
 The rest of the project is outlined as below. We start with the *Beta Analysis* first followed by *Social Sentiment* analysis using two data sources: *Twitter and StockTwit*. The conclusions from each study are summarized in the end. 
 
+<div id='BetaAnalysis'/>
 # Beta Analysis
 
 **Load beta values for a universe of 2500+ stocks**
@@ -222,7 +270,6 @@ It is clear that beta for different industry sectors are different with utilitie
 
 Also it is clear that returns are different for different beta. We will later see if there is a clear relation between returns and beta for a universe of 2500 stocks.
   
-
 ####Compute weekly returns using historical prices - SPY and 3 chosen stocks
 
 ```{r, warning=FALSE, echo=FALSE}
@@ -277,6 +324,7 @@ Weekly_Returns %>% kable
 
 ```
 
+<div id='BetaComputation'/>
 ###Beta Computation: Case Study of 3 stocks
 The next part of our analysis focusses on Beta calculation using simple linear regression for each of the three stocks with very distinct mean weekly returns. The summary stats for weekly returns as shown above provides a basic idea on how weekly returns of individual stocks are related to the benchmark (SPY) returns. The returns of IBM closely match the benchmark returns, while EIX returns are significantly lower and GS significantly higher. We will now attempt to fit a linear regression model on each of the stocks against the benchmark returns to see if SPY returns can be used as a general predictor for a stock return using the stock’s estimated Beta.
 
@@ -326,6 +374,7 @@ ggplot_lm<-function(stock_col) {
 
 ```
 
+<div id='EIX'/>
 ### Analysis for a low-beta stock (EIX)
 The below plot shows the scatterplot of SPY weekly returns (%) vs the weekly returns (%) of a utility
 company (EIX) over a period of last 10 years. The Correlation coefficient (0.50) suggests that there is a substantial positive relationship between stock returns of EIX against SPY. Observe that there is no clear pattern in the scatterplot. The trend sort of appears linear, the data fall around the line with few outliers and the variance is roughly constant. So we could apply simple regression. The beta derived using simple linear regression came out to 0.44 (see Table 4), which is on the lower end (Table 2). This means, an increase or decrease of 1% in SPY returns, would result in a corresponding increase or decrease of 0.44% only with EIX stock returns (on average). However, the trend is not strong enough suggesting that EIX stock returns are less correlated against the market risk, making it a defensive stock. Note that regardless of how economy performs, utility companies will meet their revenue targets as they provide basic/mandatory services for the people. For this reason alone, people tend to invest in such defensive stocks during times of distress as this class of stocks present much lower risk. This is also very evident from the low-beta value signifying low correlation with the market returns (SPY). The R-Squared value suggests that only 25% of the variation in EIX weekly returns can be explained by our model.
@@ -334,6 +383,7 @@ company (EIX) over a period of last 10 years. The Correlation coefficient (0.50)
 ggplot_lm("EIX.Returns")
 ```
 
+<div id='IBM'/>
 ### Analysis for a medium-beta stock (IBM)
 The below plot shows the scatterplot of SPY weekly returns against the weekly returns of IBM over the same period showing a clear linear trend. The rest of the conditions (data fall around the center line with few outliers and the variance is roughly constant) for a simple regression is also satisfied. The correlation coefficient (0.68) is much stronger in this case (compared to EIX) suggesting a much higher correlation of stock returns against SPY.  The beta derived is 0.83 (Table 4) suggesting a much closer alignment with the market (SPY) returns. This reason alone makes IBM a cyclical stock, meaning its stock performance is tied up pretty much with the performance of the market overall. In times of distress, its stock returns should suffer at the same rate as the benchmark index (SPY). The R-Squared value came out as 0.46 (Table 4). This suggests that about 46% of variation in the IBM weekly returns can be explained by the model. This is much higher than the previous model (for EIX stock).
 
@@ -341,6 +391,7 @@ The below plot shows the scatterplot of SPY weekly returns against the weekly re
 ggplot_lm("IBM.Returns")
 ```
 
+<div id='GS'/>
 ### Analysis for a high-beta stock (GS)
 The below plot shows the scatterplot of SPY weekly returns plotted against the weekly returns of GS over the same period showing a clear trend. The correlation coefficient (0.63) is very strong suggesting a very high correlation with the benchmark (SPY) returns. The beta derived in this case is 1.42 (Table 4) which is typically regarded high. This suggests very high volatility in stock price changes compared to the benchmark, presenting a much higher risk for the investors. The R-Squared value came out as 0.40 (Table 4) suggesting that 40% of variation in the GS weekly returns can be explained by the model.
 
@@ -348,6 +399,7 @@ The below plot shows the scatterplot of SPY weekly returns plotted against the w
 ggplot_lm("GS.Returns")
 ```
 
+<div id='RegressionBeta'/>
 ### Regression between beta and stock returns
 Having computed Beta for three stocks with widely differing returns, we will now generalize the relationship between Beta and total returns (both 5-year annualized) by fitting a linear regression model for the chosen universe of 2500+ stocks. In order to fit a better model, we will exclude outlier stocks with returns in excess of 80%. Below scatterplot shows the results with the beta as the predictor.
 
@@ -394,6 +446,7 @@ $$R_s = R_f + R_b*β$$ where β = Beta and Rf = intercept showing the stock retu
 4. Fitting the regression coefficients, we get the equation - 
 $$R_s = 17.16 - 5.48*β$$ where β<=4.5
 
+<div id='TrendSmoothing'/>
 ### Trend estimation using smoothing
 R-squared value for the fit came at only 3.8% which is rather a poor fit. Instead of blindly interpretting the regression results, we would now attempt to use smoothing to see if a different trend can explain the relationship better.
 
@@ -408,6 +461,7 @@ financial_data %>%
 
 The above plot clearly shows that returns are actually trending upwards as the beta increases upto certain threshold. This trend appears to be true with in the universe of low beta stocks (< 0.8). After that threshold, returns actually goes lower with much higher beta values. 
 
+<div id='RegressionLowBeta'/>
 ### Regression between low beta stocks and returns
 Low beta stocks are less volatile and their returns are expected to be more predictable when compared to the benchmark (S&P500) returns. We would like to now see if above relationship of lower returns with increasing beta holds good within the universe of low beta stocks. Basically, we will repeat above analysis for stocks having beta within the 1st quartile. As done before, we will exclude outlier stocks with returns in excess of 80%.
 
@@ -455,10 +509,11 @@ The results appears more interesting and are in agreeement with the smoother tre
 Fitting the regression coefficients, we get the equation - 
 $$R_s = 9.83 + 6.44*β$$  where β <= 0.8
 
-
+<div id='AnalysisBasket'/>
 ### Analysis of a basket of low-volatility stocks vs high-volatility stocks
 From the regression, it appears very well that very high beta stocks actually perform worse compared to lower beta stocks over time. We would want to see if this infact true by running a simulation. In particular, we want to see if a portfolio of low-volatility stocks earn returns better than a portfolio of high-volatility stocks. We will perform this analysis using Monte Carlo simulation by dividing the universe of stocks (2500+) into quartiles (4 buckets). We will analyse the returns of lowest (bottom 25%) and highest (top 25%) beta stocks by randomly sampling 100 stocks from each bucket repeatedly to calculate mean returns.
 
+<div id='MonteCarlo'/>
 **MonteCarlo simulation**
 
 ```{r, warning=FALSE, echo=FALSE}
@@ -517,6 +572,7 @@ returns_results %>% kable
 From above results, it appears very well that Monte Carlo simulation is in agreement with the regression results above. On an average, the mean returns of low beta stocks is much higher when compared to very high beta stocks.
 </code></pre>
 
+<div id='TwitterAnalysis'/>
 # Twitter Analysis on Stock volatility
 We now focus on the second part of the research to investigate the impact of social media chats (Twitter and StockTwits) on Stock volatility on a short term basis (For the month of April).
 
@@ -545,6 +601,8 @@ normalize<-function(m){
   (m - mean(m))/sd(m)
 }
 ```
+
+<div id='TWTREDA'/>
 ### Exploratory Data Analysis
 We collected data between April 6th and April 29th for a period close to 4 weeks. Let us take a look at few datasets that we used in the project. Following are some of the columns extracted from the tweets dataset
 
@@ -639,7 +697,10 @@ We can see that there is some variation in the daily traded volumes and the pric
 tradingDays <- stocks_est %>% mutate(day = lubridate::mdy(lastTradeDate)) %>% ungroup() %>% select(day) %>% distinct(day)
 ```
 
+<div id='TWTRLR'/>
 ### Applying Linear Regression
+
+<div id='TWTRCounts'/>
 #### Modeling based on count of number of tweets per day
 We will start with modeling of daily stock/tweets data and try to do a linear regression to find relation between volume, closing Price and Daily Price Change with number of tweets. We will plot this once for all the stocks and then selectively for 3 choosen stocks. The regression model is
 
@@ -883,6 +944,7 @@ dailyStockTweetNormalized %>%
 
 From the above we can see that there is a trend in which the number of tweets seems to be following the Daily Prices with a lag.
 
+<div id='TWTRSentiment'/>
 #### Modeling based on Sentiment Score of tweets per day
 Now let us look at the whether we can successfully model based on the sentiment scores. We model volume, closing Price and Daily Price Change with sentiment score of the stocks. 
 
@@ -1079,6 +1141,7 @@ dailyStockTweetNormalized %>%
 
 The above graphs seems to allign with what we saw for Price/VolumeOfTweets daily variations. We see above that there is a lag between Sentiment Score and Price and Sentiment scores seems to be always following the Price trends for the stocks. 
 
+<div id='StockTwits'/>
 # StockTwits Analysis on Stock Volatility
 
 Load the processed data with  preprocessed sentiment score for each message from github.
@@ -1177,6 +1240,7 @@ freqwords <- words %>% filter(sentiment=='positive') %>% top_n(50,counts)
 freqwords <- rbind(freqwords, words %>% filter(sentiment=='negative') %>% top_n(50,counts))
 ```
 
+<div id='StockTwitsEDA'/>
 ### Exploratory Data Analysis for StockTwits Data
 
 1. We plotted heatmap to show the stock price and tweet counts for all chosen symbols. The area for each symbol in the heatmap represents the price of the stock for a chosen day. The color scale represents the tweet counts with lighter green reperenting more number of tweet counts for a given symbol. (This data visualization be extended to a Shiny app in the future, where we can present user a date picker and they can see the heatmap for a selected day)
@@ -1203,7 +1267,10 @@ map.market(id=freqwords$words, area=freqwords$counts, group=freqwords$words, col
 hist(data$sentiment_score, main='Sentiment score', xlab='Sentiment score')
 ```
 
+<div id='StockTwitsLM'/>
 ### Applying Linear Regression
+
+<div id='StockTwitsCounts'/>
 #### Modeling based on count of number of tweets per day
 
 Similar to Twitter Analysis, we do linear regression for StockTwits dataset to find relation between volume, closing Price and Price Change with number of tweets by day. 
@@ -1429,6 +1496,7 @@ dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week =
 
 We see a lag relationship between Tweet counts and Stock price movements for GS. 
 
+<div id='StockTwitsSentiments'/>
 #### Modeling based on Sentiment Score of tweets per day
 
 Now let us look at the whether we can successfully model based on the sentiment scores. We model volume, closing Price and Price Change by sentiment score of the stocks for daily data. 
@@ -1639,6 +1707,7 @@ dat.byday %>% filter(symbol %in% selectively_analyzed_symbols) %>% mutate(week =
 
 We see a lag relationship betweent the sentiment score and price for GS that did not give significant results and for IBM though the lag relation exists but April 18th is an outlier for IBM. 
 
+<div id='Conclusion'/>
 # Conclusion 
 The detailed statistical analysis is an attempt to present the Beta as a measure of stock volatility (or risk). The exploratory data analysis of "beta" is shown to be normal and further the case study of 3 very distinct stocks demonstrates that the volatility of a stock can be explained to some extent using the volatility of the benchmark index (S&P500). The next study of beta using an universe of 2500+ stocks demonstrates that there is a trend between beta and the stock returns. The returns within the universe of low beta stocks are actually better with increasing beta (< 0.8). however, this trend doesn't hold good with stocks having much higher beta (> 1.0) where returns actually trend lower with increasing beta. This was also confirmed with the Monte Carlo simulation performed by comparing the returns of low-beta stocks against the high-beta ones.
 
@@ -1649,6 +1718,7 @@ StockTwits data results were slightly different from Twitter results. For exampl
 
 As the stock markets are closed over the weekend, but people are tweeting continuously, we have some missing data for the weekend stock prices in the model. We can use simple average scheme to fill the missing data for the weekend before fitting the model but is left for future consideration. Lexicons that we used for sentiments were last modified in the year 2013. We know that slang that people use to express themselves does change. We can modify the lexicon list and add words that are more commonly used now and that might have an impact but we will still see that sentiment scores will always follow the trends seen in Stock Price movements.Lastly we can study the time-lag of the mood/sentiment for better models for market and mood cross-correlation. 
 
+<div id='References'/>
 # References
 
 1. [Stock Prediction Using Twitter Sentiment Analysis](http://cs229.stanford.edu/proj2011/GoelMittal-StockMarketPredictionUsingTwitterSentimentAnalysis.pdf)
@@ -1656,6 +1726,7 @@ As the stock markets are closed over the weekend, but people are tweeting contin
 3. [Understanding Beta](http://www.investopedia.com/articles/financial-theory/09/calculating-beta.asp)
 4. [Low Volatility Investing](http://blog.alphaarchitect.com/2014/10/09/avoid-high-beta-stocks-period/#gs.8pw4tXI)
 
+<div id='Appendix'/>
 # Appendix
 
 _**[Project Github Repository](https://github.com/goodwillyoga/E107project)**_
