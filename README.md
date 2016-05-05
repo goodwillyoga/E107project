@@ -27,4 +27,14 @@ Pooja Singh
 
 [Lexicon](https://github.com/goodwillyoga/E107project/tree/master/pulkit/opinion-lexicon-English) can be accessed here.
 
+[StockTwits Data](https://github.com/goodwillyoga/E107project/tree/master/pooja/data) can be accessed here.
+
+[AFINN Lexicon](https://github.com/goodwillyoga/E107project/blob/master/pooja/AFINN-111.txt) can be accessed here.
+
+[StockTwits Data Gathering](https://github.com/goodwillyoga/E107project/blob/master/pooja/stock-twits_multiple.R) script can be accessed here.
+
+[StockTwits Processsing](https://github.com/goodwillyoga/E107project/blob/master/pooja/stock-twits-processing.R) script can be accessed here.
+
+[StockTwits Analysis](https://github.com/goodwillyoga/E107project/blob/master/pooja/stock-twits-analysis.R) script can be accessed here.
+
 
