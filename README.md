@@ -1,20 +1,12 @@
-# Statistical Analysis of Stock Volatility
-## Showing final analysis files here
-|
-|-project (Files with condensed results) 
-        |
-        |-Appendix.Rmd
-        |-Appendix.html
-        |-Project.Rmd
-        |-Project.html
-        |-Proposal.docx
-|
-|-data  ( gzipped files storing Yahoo finance and Tweets)
-      |
-      |-stocks.csv_04-06.gz
-      |-stocks.csv_04-07.gz
-      |.....
-      |-twitter.json_04-06.gz
-      |-twitter.json_04-07.gz
-      |.....
+# Final team project for Stats E107 
+##Statistical Analysis of Stock Volatility
+### Final [Project.html](https://github.com/goodwillyoga/E107project/blob/master/project/Project.html) and [Project.Rmd](https://raw.githubusercontent.com/goodwillyoga/E107project/master/project/Project.Rmd) can be found under the directory [project](https://github.com/goodwillyoga/E107project/tree/master/project)
+
+Team:
+
+Mohan Patnam
+
+Pulkit Bhanot
+
+Pooja Singh
 
