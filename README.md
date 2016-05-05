@@ -1,5 +1,5 @@
 # Statistical Analysis of Stock Volatility
-## Showing final analysis files here
+## Final project html file and Rmd can be found under the directory project. 
 |
 |-project (Files with condensed results) 
         |
